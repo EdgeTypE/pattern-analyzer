@@ -153,25 +153,39 @@ async function pollJob(jobId){
         setStatus('Tamamlandı', false);
         const report = j.report || {};
         resultPre.textContent = JSON.stringify(report, null, 2);
-        // If engine included html_report path in top-level, show iframe
+        // If engine included html_report path in top-level, show iframe.
+        // If the path looks like a local file (not an HTTP(S) URL), route it through
+        // the API helper endpoint /artefact so browsers can fetch it via the server.
         if (report && report.html_report){
           const iframe = document.createElement('iframe');
-          iframe.src = report.html_report;
+          let src = report.html_report;
+          // Treat as URL if it begins with http(s)://
+          if (!/^https?:\/\//i.test(src)) {
+            // Otherwise encode and route through artefact endpoint
+            src = '/artefact?path=' + encodeURIComponent(src);
+          }
+          iframe.src = src;
           iframe.style.width = '100%';
           iframe.style.height = '500px';
           artefactsEl.appendChild(iframe);
         }
-        // If artefacts listed as array `artefacts` with URLs, show images/links
+        // If artefacts listed as array `artefacts` with URLs/paths, show images/links.
+        // Non-HTTP paths will be proxied through /artefact?path=...
         if (report && report.artefacts && Array.isArray(report.artefacts)){
           report.artefacts.forEach(a=>{
             const aEl = document.createElement('div');
+            // Normalize path: if it's not an http(s) URL, proxy via /artefact
+            let href = a;
+            if (!/^https?:\/\//i.test(href)) {
+              href = '/artefact?path=' + encodeURIComponent(href);
+            }
             if (/\.(png|jpg|jpeg|svg)$/i.test(a)){
               const img = document.createElement('img');
-              img.src = a;
+              img.src = href;
               aEl.appendChild(img);
             } else {
               const link = document.createElement('a');
-              link.href = a;
+              link.href = href;
               link.textContent = a;
               link.target = '_blank';
               aEl.appendChild(link);

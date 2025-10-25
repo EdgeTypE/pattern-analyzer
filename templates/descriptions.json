@@ -1,0 +1,104 @@
+{
+  "monobit": {
+    "title": "Monobit (Frequency) Test",
+    "short": "Bitlerin 0/1 dengesini kontrol eder.",
+    "long": "Test, bit dizisindeki 0 ve 1 sayıları arasındaki oransal dengeyi değerlendirir. Aşırı sapma rasgele olmayanlığı gösterir.",
+    "remediation": "Düşük p-değerleri tekrar eden bit kalıpları veya sabit bit akışı gösterir; veri kaynağını veya ön işleme (örneğin sıkıştırma) kontrol edin."
+  },
+  "runs": {
+    "title": "Runs Test",
+    "short": "Bitler arasındaki ardışık aynı değer (run) dağılımını kontrol eder.",
+    "long": "Test, art arda gelen 0 veya 1 kümelerinin sayısını ve uzunluklarını değerlendirir; beklenenden fazla veya az run rasgeleliği bozar.",
+    "remediation": "Sık tekrar eden alt diziler veya kalıp üretimi varsa, verinin kaynağını veya üretim sürecini inceleyin."
+  },
+  "block_frequency": {
+    "title": "Block Frequency Test",
+    "short": "Büyük bloklarda bit frekansını ölçer.",
+    "long": "Veriyi sabit uzunluklu bloklara ayırır ve her blokta 0/1 oranını değerlendirir; blok içi tutarsızlıklar rasgelelik göstergesidir.",
+    "remediation": "Özellikle yapılandırılmış veri formatlarında (header/payload) blok boyutunu ayarlayın veya transform uygulayın."
+  },
+  "cusum": {
+    "title": "Cumulative Sum (CUSUM) Test",
+    "short": "Bit dizisinin kümülatif toplama sapmalarını inceler.",
+    "long": "CUSUM, pozitif ve negatif sapmaların kümülatif etkisini ölçer; büyük sapan eğilimler rasgele olmayanlığı işaret eder.",
+    "remediation": "Trend oluşturan kaynakları ve sürekli bias'ı araştırın; ön işleme ile düzeltilip düzeltilmeyeceğini test edin."
+  },
+  "serial": {
+    "title": "Serial (Overlapping) Test",
+    "short": "N-gram (bit sıraları) frekanslarını karşılaştırır.",
+    "long": "Seri test, n-bit alt dizilerin beklenen frekanslarını değerlendirir; örtüşen n-gram'ler arasındaki anormallikler ortaya çıkar.",
+    "remediation": "Tekrarlayan motifleri, sıkıştırılmış veya kodlu dizileri kontrol edin; transform zinciri ile test edin."
+  },
+  "approximate_entropy": {
+    "title": "Approximate Entropy",
+    "short": "Verinin düzensizliğini entropi temelli ölçer.",
+    "long": "Yaklaşık entropi, verideki tekrar eden paternlere duyarlıdır; düşük değerler deterministik yapıyı işaret edebilir.",
+    "remediation": "Tekrar eden yapıların kaynağını araştırın veya farklı pencere boyutlarıyla yeniden değerlendir."
+  },
+  "maurers_universal": {
+    "title": "Maurer's Universal Statistical Test",
+    "short": "Sıkıştırılabilirlik üzerinden rastgeleliği değerlendirir.",
+    "long": "Bu test, verinin ideal sıkıştırma oranına göre değerlendirilir; kolay sıkıştırılabilen veri rastgele değildir.",
+    "remediation": "Verinin sıkıştırılabilirliğini kontrol edin; tek tip tekrarlar varsa veri kaynağını gözden geçirin."
+  },
+  "non_overlapping_template": {
+    "title": "Non-overlapping Template Matching",
+    "short": "Belirli şablonların varlığını sayar (çakışma yok).",
+    "long": "Önceden tanımlı sabit uzunluklu şablonların tekrarını sayar; aşırı tekrar şüphelidir.",
+    "remediation": "Şablon setini ve eşik değerlerini gözden geçirin; pre-transform uygulamayı deneyin."
+  },
+  "overlapping_template": {
+    "title": "Overlapping Template Matching",
+    "short": "Belirli şablonların tekrarını çakışma olsa bile sayar.",
+    "long": "Örtüşen şablon örüntülerini sayarak lokal tekrarlılıkları tespit eder.",
+    "remediation": "Verideki sık tekrar eden motifleri inceleyin; gerekirse windowing uygulayın."
+  },
+  "random_excursions": {
+    "title": "Random Excursions",
+    "short": "Saçılma (excursion) ziyaretlerinin dağılımını inceler.",
+    "long": "Random walk temelli bu test, durumların ziyaret sıklıklarını değerlendirir; beklenmeyen dağılımlar düzensizlik göstergesi olabilir.",
+    "remediation": "Uzun aralıklı bağımlılıkları kontrol edin; daha fazla örnekleme ile test edin."
+  },
+  "random_excursions_variant": {
+    "title": "Random Excursions Variant",
+    "short": "Çeşitlendirilmiş excursion sayım metrikleri sunar.",
+    "long": "Variant, farklı durumların ziyaret istatistiklerini ölçerek daha hassas saptamalar yapar.",
+    "remediation": "Anormal değerler görüldüğünde verinin segmentlerini analiz edin."
+  },
+  "nist_dft_spectral": {
+    "title": "NIST DFT Spectral Test",
+    "short": "Dizinin frekans alanındaki anormalliklerini arar.",
+    "long": "Diskret Fourier Transform (DFT) kullanarak tepe (peak) frekansları tespit eder; belirgin spektral tepe rasgele olmayan düzenleri gösterir.",
+    "remediation": "Periyodiklik üreten kaynakları (tekrar eden bloklar, sensor sampling) kontrol edin."
+  },
+  "fft_spectral": {
+    "title": "FFT Spectral (Large-Scale)",
+    "short": "Büyük veriler için spektral test ve downsample koruması.",
+    "long": "FFT tabanlı test, NAIVE_DFT_BIT_LIMIT eşiği üzerinden otomatik örnekleme yapar; yüksek bellek kullanımını engeller.",
+    "remediation": "Eşikleri ve downsample ayarlarını doğrulayın; veri segmentasyonu deneyin."
+  },
+  "linear_complexity": {
+    "title": "Linear Complexity Test",
+    "short": "Verinin LFSR tabanlı karmaşıklığını ölçer.",
+    "long": "Lineer karmaşıklık, diziyi üretebilecek en kısa LFSR uzunluğunu değerlendirir; düşük karmaşıklık deterministik yapıya işaret eder.",
+    "remediation": "Tekrarlayan yapı veya kısa periyotlu kaynakları inceleyin."
+  },
+  "lz_complexity": {
+    "title": "LZ-Complexity",
+    "short": "Lempel-Ziv sıkıştırma temelli karmaşıklık metriği.",
+    "long": "Verinin LZ77/LZ78 tabanlı ayrıştırılabilirliğini ölçer; düşük değerler yüksek tekrarlılık gösterir.",
+    "remediation": "Sık tekrar eden alt dizileri ve protokol başlıklarını kontrol edin."
+  },
+  "dotplot": {
+    "title": "Dotplot (Self-Similarity)",
+    "short": "Verinin kendi içinde tekrar eden bölümlerini görselleştirir.",
+    "long": "Pencerelere bölünmüş veri arasındaki benzerlik matrisi, kopyalanmış veya tekrarlayan blokları gösteren bir ısı haritası üretir.",
+    "remediation": "Tekrarlayan segmentleri ayıklayın veya segment bazlı analiz uygulayın; artefaktları raporlayın."
+  },
+  "binary_matrix_rank": {
+    "title": "Binary Matrix Rank Test",
+    "short": "Bit matrislerinin rank dağılımını test eder.",
+    "long": "Veriden oluşturulan ikili matrislerin rank'leri beklenen dağılımdan saparsa rasgelelik sorgulanır.",
+    "remediation": "Matris boyutlandırmasını ve veri segmentasyonunu kontrol edin."
+  }
+}

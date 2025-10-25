@@ -50,11 +50,22 @@ def test_visual_error_reported_in_visual_errors_and_does_not_fail_test():
     engine.register_test("goodtest", GoodTest())
     engine.register_visual("badvisual", BadVisual())
 
-def test_visual_error_sets_result_status_error():
-    """Test that visual errors set result status to error when motor has new behavior."""
-    engine = Engine()
-    engine.register_test("goodtest", GoodTest())
-    engine.register_visual("badvisual", BadVisual())
+    out = engine.analyze(
+        b"\x00\x01\x02",
+        {
+            "tests": [{"name": "goodtest", "params": {}}],
+        },
+    )
+
+    assert out["results"], "Expected at least one result"
+    r = out["results"][0]
+
+    # Engine should keep the test completed while reporting visual errors separately.
+    assert r.get("status") == "completed"
+    # The serialized result must include the visual_errors entry for the failing visual plugin.
+    assert "visual_errors" in r and any(v.get("visual_name") == "badvisual" for v in r.get("visual_errors"))
+    # GoodTest returns passed=True with p_value=None in the TestResult above.
+    assert r.get("passed") is True
 
 
 

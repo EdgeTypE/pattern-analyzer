@@ -8,7 +8,7 @@ redirect so visiting http://localhost:8000 opens the UI.
 """
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, Body
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
@@ -95,6 +95,22 @@ async def report(job_id: str):
     if entry["status"] in ("running", "pending"):
         return {"job_id": job_id, "status": entry["status"]}
     return {"job_id": job_id, "status": "error", "error": entry.get("error")}
+
+@app.get("/artefact", include_in_schema=False)
+async def artefact(path: str):
+    """
+    Serve an artefact file by absolute path (development helper).
+    Security: only allows files inside the current workspace directory to be served.
+    Usage: /artefact?path=/absolute/path/to/file.png
+    """
+    # Resolve and restrict to workspace root for safety
+    file_path = os.path.abspath(path)
+    workspace_root = os.path.abspath(os.getcwd())
+    if not file_path.startswith(workspace_root):
+        raise HTTPException(status_code=403, detail="forbidden: path outside workspace")
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="not_found")
+    return FileResponse(file_path)
 
 @app.get("/health")
 async def health():
