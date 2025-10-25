@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "patternlab"
+version = "0.1.0"
+description = "Binary pattern analysis framework"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "PatternLab Team"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "click>=8.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+patternlab = "patternlab.cli:cli"
+
+
+[project.entry-points."patternlab.plugins"]
+xor_const = "patternlab.plugins.xor_const:XOPlugin"
+monobit = "patternlab.plugins.monobit:MonobitTest"
+vigenere = "patternlab.plugins.vigenere:VigenerePlugin"
+block_frequency = "patternlab.plugins.block_frequency_test:BlockFrequencyTest"
+runs = "patternlab.plugins.runs_test:RunsTest"
+serial = "patternlab.plugins.serial_test:SerialTest"
+fft_spectral = "patternlab.plugins.fft_spectral:FFTSpectralTest"
+autocorrelation = "patternlab.plugins.autocorrelation:AutocorrelationTest"
+linear_complexity = "patternlab.plugins.linear_complexity:LinearComplexityTest"
+cusum = "patternlab.plugins.cusum:CumulativeSumsTest"
+binary_matrix_rank = "patternlab.plugins.binary_matrix_rank:BinaryMatrixRankTest"
+longest_run = "patternlab.plugins.longest_run:LongestRunOnesTest"
+[project.urls]
+Homepage = "https://github.com/example/patternlab"
+Repository = "https://github.com/example/patternlab.git"
+Issues = "https://github.com/example/patternlab/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v"

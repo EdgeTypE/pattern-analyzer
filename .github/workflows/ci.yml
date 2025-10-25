@@ -1,0 +1,55 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12]
+        extras: [none, fast]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ matrix.extras }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.extras }}" = "fast" ]; then
+            pip install .[test,fast]
+          else
+            pip install .[test]
+          fi
+          pip install ruff mypy black coverage
+
+      - name: Run linters and type checks
+        run: |
+          ruff check .
+          black --check .
+          mypy patternlab || true
+
+      - name: Run tests with coverage
+        run: |
+          coverage run -m pytest
+          coverage xml -i
+          coverage report -m
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}-${{ matrix.extras }}
+          path: coverage.xml

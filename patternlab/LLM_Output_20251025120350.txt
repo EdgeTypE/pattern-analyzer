@@ -1,0 +1,2151 @@
+﻿LLM File Collector Output
+Root Directory: A:\Users\Edige\GitHub\pattern-analyzer\patternlab
+Execution Timestamp: 2025-10-25 12:03:49
+==================================================
+
+DIRECTORY STRUCTURE:
+--------------------------------------------------
+├── __pycache__
+│   ├── __init__.cpython-313.pyc
+│   ├── cli.cpython-313.pyc
+│   ├── engine.cpython-313.pyc
+│   └── plugin_api.cpython-313.pyc
+├── plugins
+│   ├── __pycache__
+│   │   ├── __init__.cpython-313.pyc
+│   │   ├── autocorrelation.cpython-313.pyc
+│   │   ├── binary_matrix_rank.cpython-313.pyc
+│   │   ├── block_frequency_test.cpython-313.pyc
+│   │   ├── cusum.cpython-313.pyc
+│   │   ├── fft_placeholder.cpython-313.pyc
+│   │   ├── fft_spectral.cpython-313.pyc
+│   │   ├── linear_complexity.cpython-313.pyc
+│   │   ├── longest_run.cpython-313.pyc
+│   │   ├── monobit.cpython-313.pyc
+│   │   ├── runs_test.cpython-313.pyc
+│   │   ├── serial_test.cpython-313.pyc
+│   │   ├── vigenere.cpython-313.pyc
+│   │   └── xor_const.cpython-313.pyc
+│   ├── __init__.py
+│   ├── autocorrelation.py
+│   ├── binary_matrix_rank.py
+│   ├── block_frequency_test.py
+│   ├── cusum.py
+│   ├── fft_placeholder.py
+│   ├── fft_spectral.py
+│   ├── linear_complexity.py
+│   ├── longest_run.py
+│   ├── monobit.py
+│   ├── runs_test.py
+│   ├── serial_test.py
+│   ├── vigenere.py
+│   └── xor_const.py
+├── __init__.py
+├── cli.py
+├── engine.py
+└── plugin_api.py
+
+==================================================
+FILE CONTENTS:
+--------------------------------------------------
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\cli.py (5669 bytes) ---
+"""Command line interface for PatternLab."""
+
+import json
+import click
+import os
+from .engine import Engine
+from .plugin_api import serialize_testresult
+
+try:
+    import yaml  # optional dependency for YAML config files
+except Exception:
+    yaml = None
+
+
+@click.group()
+@click.version_option()
+def cli():
+    """PatternLab - Binary pattern analysis framework."""
+    pass
+
+
+def _normalize_tests_entry(t):
+    """Normalize a single test entry which may be either a string or a dict."""
+    if isinstance(t, str):
+        return {'name': t, 'params': {}}
+    if isinstance(t, dict):
+        return {'name': t.get('name'), 'params': t.get('params', {})}
+    raise ValueError("Invalid test entry type")
+
+
+def _normalize_transforms_entry(t):
+    """Normalize a single transform entry which may be either a string or a dict."""
+    if isinstance(t, str):
+        return {'name': t, 'params': {}}
+    if isinstance(t, dict):
+        return {'name': t.get('name'), 'params': t.get('params', {})}
+    raise ValueError("Invalid transform entry type")
+
+
+@cli.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('--out', '-o', 'output_file', type=click.Path(),
+              default='report.json', help='Output JSON file path')
+@click.option('--xor-value', type=int, default=0,
+              help='XOR value for transformation (0-255)')
+@click.option('--config', '-c', 'config_path', type=click.Path(exists=True), default=None,
+              help='Path to YAML or JSON configuration file specifying tests/transforms')
+@click.option('--default-visuals', 'default_visuals', type=str, default=None,
+              help='Default visuals settings as JSON string')
+@click.option('--artefact-dir', 'artefact_dir', type=click.Path(), default=None,
+              help='Directory to write visual artefacts (writes files instead of inline base64)')
+@click.option('--html-report', 'html_report', type=click.Path(), default=None,
+              help='Path to write minimal HTML report')
+def analyze(input_file, output_file, xor_value, config_path, default_visuals, artefact_dir, html_report):
+    """Analyze binary file for patterns.
+
+    Supports optional YAML or JSON configuration files. When no config is provided,
+    a sensible default wide test-set is executed.
+    """
+    try:
+        # Read input file
+        with open(input_file, 'rb') as f:
+            input_bytes = f.read()
+
+        # Default wide test set
+        default_tests = [
+            "monobit",
+            "runs",
+            "block_frequency",
+            "serial",
+            "fft_spectral",
+            "autocorrelation",
+            "linear_complexity",
+        ]
+
+        file_conf = {}
+        if config_path:
+            # Load YAML if extension suggests yaml/yml and yaml lib available; otherwise JSON
+            _, ext = os.path.splitext(config_path.lower())
+            with open(config_path, 'r', encoding='utf-8') as cf:
+                if ext in ('.yaml', '.yml'):
+                    if yaml is None:
+                        raise click.BadParameter("PyYAML is required to load YAML config files; install 'pyyaml' or use JSON")
+                    file_conf = yaml.safe_load(cf) or {}
+                else:
+                    # assume JSON
+                    file_conf = json.load(cf) or {}
+
+        # Ensure structure is normalized for Engine.analyze
+        transforms_conf = file_conf.get('transforms', [])
+        tests_conf = file_conf.get('tests', None)
+
+        # If tests not provided in config, use default wide set
+        if tests_conf is None:
+            tests_conf = default_tests
+
+        # Normalize entries (allow strings or dicts in config)
+        transforms = [_normalize_transforms_entry(t) for t in transforms_conf]
+        tests = [_normalize_tests_entry(t) for t in tests_conf]
+
+        # Honor xor_value CLI flag by appending the transform (CLI flag takes precedence and is additive)
+        if xor_value:
+            transforms.append({'name': 'xor_const', 'params': {'xor_value': xor_value}})
+
+        # Allow other top-level config options (e.g., fdr_q, visuals) to pass-through
+        merged_config = {
+            'transforms': transforms,
+            'tests': tests,
+        }
+        for k in ('fdr_q', 'visuals'):
+            if k in file_conf:
+                merged_config[k] = file_conf[k]
+
+        # If CLI provided default_visuals JSON, parse and set as visuals (CLI flag overrides file)
+        if default_visuals:
+            try:
+                merged_config['visuals'] = json.loads(default_visuals)
+            except Exception as e:
+                raise click.BadParameter(f"--default-visuals must be valid JSON: {e}")
+
+        # If artefact_dir provided via CLI, pass it through to engine (engine will write files there)
+        if artefact_dir:
+            merged_config['artefact_dir'] = artefact_dir
+        # If html_report provided via CLI, request engine to write minimal HTML report
+        if html_report:
+            merged_config['html_report'] = html_report
+
+        # Run analysis
+        engine = Engine()
+        output = engine.analyze(input_bytes, merged_config)
+
+        # Write output directly as JSON following the new schema
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(output, f, indent=2)
+
+        click.echo(f"Analysis complete. Results written to {output_file}")
+
+    except Exception as e:
+        click.echo(f"Error during analysis: {e}", err=True)
+        raise click.Abort()
+
+
+if __name__ == '__main__':
+    cli()
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\cli.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\engine.py (23544 bytes) ---
+"""PatternLab analysis engine."""
+ 
+import importlib.metadata
+from typing import Dict, Any, List, Tuple
+from .plugin_api import BytesView, TestResult, TransformPlugin, TestPlugin, VisualPlugin, serialize_testresult
+import base64
+import uuid
+import os
+import math
+import statistics
+import time
+import json
+import datetime
+import sys
+import platform
+import hashlib
+ 
+ 
+class Engine:
+    """Main analysis engine for PatternLab."""
+ 
+    def __init__(self):
+        self._transforms: Dict[str, TransformPlugin] = {}
+        self._tests: Dict[str, TestPlugin] = {}
+        self._visuals: Dict[str, VisualPlugin] = {}
+        self._discover_plugins()
+ 
+    def _discover_plugins(self):
+        """Discover plugins via entry points."""
+        # Register built-in plugins
+        from .plugins.xor_const import XOPlugin
+        from .plugins.monobit import MonobitTest
+
+        self.register_transform('xor_const', XOPlugin())
+        self.register_test('monobit', MonobitTest())
+
+        # Register known bundled Visual plugins (optional)
+        try:
+            from .plugins.fft_placeholder import FFTPlaceholder
+            self.register_visual('fft_placeholder', FFTPlaceholder())
+        except Exception:
+            # ignore if bundled visual plugin cannot be imported for any reason
+            pass
+
+        # Load plugins published via entry points (group: 'patternlab.plugins')
+        import importlib.metadata as im
+        for ep in im.entry_points(group='patternlab.plugins'):
+            cls = ep.load()
+            if issubclass(cls, TransformPlugin):
+                self.register_transform(ep.name, cls())
+            elif issubclass(cls, TestPlugin):
+                self.register_test(ep.name, cls())
+            elif issubclass(cls, VisualPlugin):
+                # Entry point class implements VisualPlugin
+                self.register_visual(ep.name, cls())
+ 
+    def register_transform(self, name: str, plugin: TransformPlugin):
+        """Register a transform plugin."""
+        self._transforms[name] = plugin
+
+    def register_test(self, name: str, plugin: TestPlugin):
+        """Register a test plugin."""
+        self._tests[name] = plugin
+
+    def register_visual(self, name: str, plugin: VisualPlugin):
+        """Register a visual plugin."""
+        self._visuals[name] = plugin
+ 
+    def _benjamini_hochberg(self, p_values: List[float], q: float) -> List[bool]:
+        """Perform Benjaminiâ€“Hochberg FDR correction.
+ 
+        Returns a list of booleans indicating which hypotheses are rejected (significant).
+        """
+        m = len(p_values)
+        if m == 0:
+            return []
+        # Pair p-values with original indices
+        indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+        rejected = [False] * m
+        # Find the largest k such that p_(k) <= (k/m) * q (1-based k)
+        max_k = 0
+        for rank, (idx, p) in enumerate(indexed, start=1):
+            if p <= (rank / m) * q:
+                max_k = rank
+        if max_k == 0:
+            return rejected
+        # Mark all with rank <= max_k as rejected
+        for rank, (idx, p) in enumerate(indexed, start=1):
+            if rank <= max_k:
+                rejected[idx] = True
+        return rejected
+ 
+    def _pvalue_stats(self, p_values: List[float]) -> Dict[str, Any]:
+        """Return simple statistics and a small histogram for p-values distribution."""
+        if not p_values:
+            return {"count": 0, "mean": None, "median": None, "stdev": None, "histogram": {}}
+        cnt = len(p_values)
+        mean = statistics.mean(p_values)
+        median = statistics.median(p_values)
+        stdev = statistics.pstdev(p_values) if cnt > 1 else 0.0
+        # simple buckets
+        buckets = {"0-0.01": 0, "0.01-0.05": 0, "0.05-0.1": 0, "0.1-1.0": 0}
+        for p in p_values:
+            if p < 0.01:
+                buckets["0-0.01"] += 1
+            elif p < 0.05:
+                buckets["0.01-0.05"] += 1
+            elif p < 0.1:
+                buckets["0.05-0.1"] += 1
+            else:
+                buckets["0.1-1.0"] += 1
+        return {"count": cnt, "mean": mean, "median": median, "stdev": stdev, "histogram": buckets}
+ 
+    def analyze(self, input_bytes: bytes, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze input bytes using registered plugins and perform FDR + scorecard.
+ 
+        config format:
+        {
+            'transforms': [{'name': 'xor_const', 'params': {'xor_value': 55}}],
+            'tests': [{'name': 'monobit', 'params': {}}],
+            'fdr_q': 0.05  # optional, default 0.05
+        }
+ 
+        Returns a dict with 'results' (serialized) and 'scorecard'.
+        """
+        # Normalize input
+        data = BytesView(input_bytes)
+ 
+        # Apply configured transforms in sequence
+        for tconf in config.get('transforms', []):
+            t = self._transforms[tconf['name']]
+            try:
+                data = t.run(data, tconf.get('params', {}))
+            except Exception as e:
+                # If a transform fails, report the error and abort analysis.
+                return {
+                    "results": [
+                        {
+                            "transform_name": tconf.get("name"),
+                            "status": "error",
+                            "details": str(e),
+                        }
+                    ],
+                    "scorecard": {
+                        "failed_tests": 0,
+                        "mean_effect_size": None,
+                        "p_value_distribution": {"count": 0, "mean": None, "median": None, "stdev": None, "histogram": {}},
+                        "total_tests": 0,
+                        "fdr_q": float(config.get("fdr_q", 0.05)),
+                    },
+                }
+ 
+        # Determine tests to run: use provided list or all registered tests
+        tests_conf = config.get('tests') or [{'name': n, 'params': {}} for n in self._tests]
+ 
+        # Run tests but honor TestPlugin.requires: if required input not available, skip the test
+        raw_results: List[object] = []  # elements are either TestResult or dict indicating skipped
+        for c in tests_conf:
+            tp = self._tests[c['name']]
+            reqs = getattr(tp, 'requires', []) or []
+            missing_reqs: List[str] = []
+            # Lazy caches for data views that may be expensive
+            _bits_cached = None
+            for req in reqs:
+                if req == 'bits':
+                    try:
+                        if _bits_cached is None:
+                            _bits_cached = data.bit_view()
+                    except Exception:
+                        missing_reqs.append('bits')
+                elif req == 'bytes':
+                    try:
+                        _ = data.to_bytes()
+                    except Exception:
+                        missing_reqs.append('bytes')
+                elif req == 'text':
+                    if data.text_view() is None:
+                        missing_reqs.append('text')
+                else:
+                    # Unknown requirement: check attribute presence on BytesView
+                    if not hasattr(data, req):
+                        missing_reqs.append(req)
+            if missing_reqs:
+                reason = (
+                    f"Required input '{missing_reqs[0]}' not available"
+                    if len(missing_reqs) == 1
+                    else f"Required inputs {missing_reqs} not available"
+                )
+                raw_results.append({"test_name": c['name'], "status": "skipped", "reason": reason})
+            else:
+                # Prepare lightweight observability measurements for this test invocation.
+                try:
+                    bytes_processed = len(data.to_bytes())
+                except Exception:
+                    bytes_processed = None
+
+                # run the test using the plugin's safe_run wrapper (if available)
+                # while measuring execution time (ms).
+                start = time.perf_counter()
+                res = tp.safe_run(data, c.get('params', {})) if hasattr(tp, "safe_run") else tp.run(data, c.get('params', {}))
+                end = time.perf_counter()
+                duration_ms = (end - start) * 1000.0
+
+                if isinstance(res, TestResult):
+                    # Attach observability fields to the TestResult (plugins are allowed to
+                    # override if they set these themselves).
+                    try:
+                        # only set if not already provided by the plugin
+                        if getattr(res, "time_ms", None) is None:
+                            res.time_ms = duration_ms
+                    except Exception:
+                        res.time_ms = duration_ms
+                    try:
+                        if getattr(res, "bytes_processed", None) is None:
+                            res.bytes_processed = bytes_processed
+                    except Exception:
+                        res.bytes_processed = bytes_processed
+
+                    raw_results.append(res)
+                elif isinstance(res, dict) and res.get("status") == "error":
+                    # normalize the error into the same skipped/skipped-like dict shape used elsewhere
+                    raw_results.append({"test_name": c['name'], "status": "error", "reason": res.get("reason")})
+                else:
+                    # fallback: append whatever the plugin returned
+                    raw_results.append(res)
+ 
+        # Extract primary p-values for FDR correction.
+        # Only include tests that provide a p_value (not None) AND have category == "statistical".
+        q = float(config.get('fdr_q', 0.05))
+        p_values: List[float] = []
+        for r in raw_results:
+            if isinstance(r, TestResult) and r.p_value is not None and getattr(r, "category", None) == "statistical":
+                p_values.append(r.p_value)
+        
+        rejected = self._benjamini_hochberg(p_values, q)
+ 
+        # Serialize results and attach FDR info
+        serialized_results: List[Dict[str, Any]] = []
+        all_effects: List[float] = []
+        visuals_conf = config.get('visuals', {})  # optional mapping plugin_name -> params
+        # Map rejected flags back to test entries that actually produced p-values
+        p_idx = 0
+        for r in raw_results:
+            if isinstance(r, TestResult):
+                s = serialize_testresult(r)
+                s['status'] = 'completed'
+                # Only TestResult objects that contributed a p-value to the FDR (p_value not None
+                # and category == "statistical") should be mapped to the `rejected` list.
+                if r.p_value is not None and getattr(r, "category", None) == "statistical":
+                    s['fdr_rejected'] = bool(rejected[p_idx]) if p_idx < len(rejected) else False
+                    p_idx += 1
+                else:
+                    s['fdr_rejected'] = False
+                s['fdr_q'] = q
+
+                # Expose observability fields in the serialized result when present on the TestResult
+                s['time_ms'] = getattr(r, "time_ms", None)
+                s['bytes_processed'] = getattr(r, "bytes_processed", None)
+
+                # Simple JSONL logger: if user provided config['log_path'], append a line per test
+                log_path = config.get("log_path")
+                if log_path:
+                    try:
+                        log_entry = {
+                            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                            "test_name": s.get("test_name"),
+                            "status": s.get("status"),
+                            "time_ms": s.get("time_ms"),
+                            "bytes_processed": s.get("bytes_processed"),
+                        }
+                        with open(log_path, "a", encoding="utf-8") as lf:
+                            lf.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+                    except Exception:
+                        # never fail the analysis because logging failed
+                        pass
+
+                # Attach visual artifacts produced by registered VisualPlugins.
+                visuals_artifacts: Dict[str, Dict[str, str]] = {}
+                artefact_dir = config.get('artefact_dir')
+                for vname, vplugin in self._visuals.items():
+                    try:
+                        vparams = visuals_conf.get(vname, {})
+                        out_bytes = vplugin.render(r, vparams)
+                        if isinstance(out_bytes, (bytes, bytearray)):
+                            mime = vparams.get('mime', 'image/svg+xml')
+                            if artefact_dir:
+                                # write bytes to file under artefact_dir and return path in JSON
+                                try:
+                                    os.makedirs(artefact_dir, exist_ok=True)
+                                    # choose extension based on mime
+                                    if mime == 'image/svg+xml':
+                                        ext = 'svg'
+                                    elif 'png' in mime:
+                                        ext = 'png'
+                                    elif 'jpeg' in mime or 'jpg' in mime:
+                                        ext = 'jpg'
+                                    else:
+                                        ext = 'bin'
+                                    safe_name = str(s.get('test_name') or 'visual').replace(" ", "_")
+                                    fname = f"{safe_name}_{vname}_{uuid.uuid4().hex}.{ext}"
+                                    path = os.path.join(artefact_dir, fname)
+                                    with open(path, "wb") as wf:
+                                        wf.write(bytes(out_bytes))
+                                    visuals_artifacts[vname] = {'mime': mime, 'path': path}
+                                except Exception as e:
+                                    # if writing fails, propagate to outer handler to mark result as error
+                                    raise
+                            else:
+                                # fallback: embed as base64 data URI (existing behaviour)
+                                data_b64 = base64.b64encode(bytes(out_bytes)).decode('ascii')
+                                visuals_artifacts[vname] = {'mime': mime, 'data_base64': data_b64}
+                    except Exception as e:
+                        # If a visual plugin fails for this result, mark this result as an error
+                        # and include the exception details. Stop attempting other visuals for this result.
+                        s['status'] = 'error'
+                        s['details'] = str(e)
+                        visuals_artifacts = {}
+                        break
+                if visuals_artifacts:
+                    s['visuals'] = visuals_artifacts
+ 
+                serialized_results.append(s)
+                # collect effect sizes values if present
+                if isinstance(r.effect_sizes, dict):
+                    for v in r.effect_sizes.values():
+                        try:
+                            all_effects.append(float(v))
+                        except Exception:
+                            continue
+            else:
+                # skipped entry (dict with keys test_name, status, reason)
+                skipped_entry = {
+                    "test_name": r.get("test_name"),
+                    "status": "skipped",
+                    "reason": r.get("reason"),
+                    "fdr_rejected": False,
+                    "fdr_q": q,
+                }
+                serialized_results.append(skipped_entry)
+ 
+        # Scorecard
+        failed_count = sum(1 for r in serialized_results if r.get('fdr_rejected'))
+        mean_effect = statistics.mean(all_effects) if all_effects else None
+        p_stats = self._pvalue_stats(p_values)
+        scorecard = {
+            "failed_tests": failed_count,
+            "mean_effect_size": mean_effect,
+            "p_value_distribution": p_stats,
+            "total_tests": len(serialized_results),
+            "fdr_q": q,
+        }
+ 
+        # Observability / meta information for reports
+        meta: Dict[str, Any] = {}
+        try:
+            meta["python"] = platform.python_version()
+            meta["python_full"] = sys.version
+            meta["platform"] = platform.platform()
+        except Exception:
+            meta["python"] = None
+            meta["python_full"] = None
+            meta["platform"] = None
+ 
+        # Try to capture optional scientific stack versions
+        try:
+            import numpy as _np  # type: ignore
+            meta["numpy"] = getattr(_np, "__version__", None)
+        except Exception:
+            meta["numpy"] = None
+        try:
+            import scipy as _sp  # type: ignore
+            meta["scipy"] = getattr(_sp, "__version__", None)
+        except Exception:
+            meta["scipy"] = None
+ 
+        # Plugins information: include class/module and best-effort package version
+        def _pkg_version_for(module_name: str):
+            root = (module_name.split(".") or [None])[0]
+            if not root:
+                return None
+            try:
+                return importlib.metadata.version(root)
+            except Exception:
+                return None
+ 
+        plugins_info: Dict[str, List[Dict[str, Any]]] = {"transforms": [], "tests": [], "visuals": []}
+        for name, plug in self._transforms.items():
+            plugins_info["transforms"].append(
+                {
+                    "name": name,
+                    "class": plug.__class__.__name__,
+                    "module": plug.__class__.__module__,
+                    "package_version": _pkg_version_for(plug.__class__.__module__),
+                }
+            )
+        for name, plug in self._tests.items():
+            plugins_info["tests"].append(
+                {
+                    "name": name,
+                    "class": plug.__class__.__name__,
+                    "module": plug.__class__.__module__,
+                    "package_version": _pkg_version_for(plug.__class__.__module__),
+                }
+            )
+        for name, plug in self._visuals.items():
+            plugins_info["visuals"].append(
+                {
+                    "name": name,
+                    "class": plug.__class__.__name__,
+                    "module": plug.__class__.__module__,
+                    "package_version": _pkg_version_for(plug.__class__.__module__),
+                }
+            )
+        meta["plugins"] = plugins_info
+ 
+        # Config & input hashes for reproducibility
+        try:
+            cfg_json = json.dumps(config, sort_keys=True, default=str)
+            meta["config_hash"] = hashlib.sha256(cfg_json.encode("utf-8")).hexdigest()
+        except Exception:
+            meta["config_hash"] = None
+        try:
+            meta["input_hash"] = hashlib.sha256(input_bytes).hexdigest()
+        except Exception:
+            meta["input_hash"] = None
+ 
+        output = {"results": serialized_results, "scorecard": scorecard, "meta": meta}
+ 
+        # Optional: generate a minimal HTML report if requested via config['html_report']
+        html_path = config.get("html_report")
+        if html_path:
+            try:
+                import json as _json
+                import html as _html
+ 
+                parts = []
+                parts.append('<!doctype html>')
+                parts.append('<html><head><meta charset="utf-8"><title>PatternLab Report</title></head><body>')
+                parts.append('<h1>PatternLab Report</h1>')
+ 
+                # Meta section
+                parts.append('<h2>Meta</h2>')
+                parts.append('<table border="1" cellpadding="4">')
+                for k, v in meta.items():
+                    parts.append(f'<tr><th style="text-align:left">{_html.escape(str(k))}</th><td>{_html.escape(_json.dumps(v))}</td></tr>')
+                parts.append('</table>')
+ 
+                # Summary table
+                parts.append('<h2>Summary</h2>')
+                parts.append('<table border="1" cellpadding="4">')
+                for k, v in scorecard.items():
+                    parts.append(f'<tr><th style="text-align:left">{_html.escape(str(k))}</th><td>{_html.escape(_json.dumps(v))}</td></tr>')
+                parts.append('</table>')
+ 
+                # Results list
+                parts.append('<h2>Results</h2>')
+                for res in serialized_results:
+                    parts.append(f'<div class="result"><h3>{_html.escape(str(res.get("test_name", "")))}</h3>')
+                    parts.append(f'<p>Status: {_html.escape(str(res.get("status")))}')
+                    if res.get("fdr_rejected"):
+                        parts.append(' <strong style="color:red">[FDR rejected]</strong>')
+                    parts.append('</p>')
+ 
+                    if isinstance(res.get("metrics"), dict) and res.get("metrics"):
+                        parts.append('<details><summary>Metrics</summary><pre>')
+                        parts.append(_html.escape(_json.dumps(res.get("metrics"), indent=2)))
+                        parts.append('</pre></details>')
+ 
+                    if isinstance(res.get("visuals"), dict):
+                        for vname, v in res.get("visuals", {}).items():
+                            parts.append(f'<h4>{_html.escape(vname)}</h4>')
+                            mime = v.get("mime", "image/svg+xml")
+                            if "data_base64" in v:
+                                # embed as data URI
+                                parts.append(f'<img alt="{_html.escape(vname)}" src="data:{_html.escape(mime)};base64,{v["data_base64"]}" style="max-width:100%;height:auto"/>')
+                            elif "path" in v:
+                                parts.append(f'<img alt="{_html.escape(vname)}" src="{_html.escape(v["path"])}" style="max-width:100%;height:auto"/>')
+                    parts.append('</div><hr/>')
+ 
+                parts.append('</body></html>')
+                html_text = "\n".join(parts)
+ 
+                # Ensure directory exists
+                dirn = os.path.dirname(html_path) or "."
+                os.makedirs(dirn, exist_ok=True)
+                with open(html_path, "w", encoding="utf-8") as hf:
+                    hf.write(html_text)
+            except Exception:
+                # Never fail the analysis because HTML export failed; swallow errors.
+                pass
+ 
+        return output
+ 
+    def get_available_transforms(self) -> List[str]:
+        """Get list of available transform names."""
+        return list(self._transforms.keys())
+
+    def get_available_tests(self) -> List[str]:
+        """Get list of available test names."""
+        return list(self._tests.keys())
+
+    def get_available_visuals(self) -> List[str]:
+        """Get list of available visual plugin names."""
+        return list(self._visuals.keys())
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\engine.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugin_api.py (6734 bytes) ---
+"""Plugin API definitions for PatternLab."""
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Union
+import math
+
+
+@dataclass
+class TestResult:
+    """Test result container.
+
+    Extended with observability fields:
+      - time_ms: duration of the test execution in milliseconds (float or None)
+      - bytes_processed: number of bytes the test observed/processed (int or None)
+    The rest of the canonical schema remains the same.
+    """
+    __test__ = False
+    test_name: str
+    passed: bool
+    p_value: Optional[float]
+    category: str = "statistical"
+    p_values: Dict[str, float] = field(default_factory=dict)
+    effect_sizes: Dict[str, float] = field(default_factory=dict)
+    flags: List[str] = field(default_factory=list)
+    metrics: Dict[str, Any] = field(default_factory=dict)
+    z_score: Optional[float] = None
+    evidence: Optional[str] = None
+
+    # Observability fields
+    time_ms: Optional[float] = None
+    bytes_processed: Optional[int] = None
+
+    def __post_init__(self):
+        # Allow None for p_value (no formal p-value), otherwise enforce [0.0, 1.0]
+        if self.p_value is not None:
+            if not (0.0 <= self.p_value <= 1.0):
+                raise ValueError("p_value must be between 0 and 1 or None")
+        # Normalize types for observability fields (if provided)
+        if self.time_ms is not None:
+            try:
+                self.time_ms = float(self.time_ms)
+            except Exception:
+                raise ValueError("time_ms must be a number (milliseconds) or None")
+        if self.bytes_processed is not None:
+            try:
+                self.bytes_processed = int(self.bytes_processed)
+            except Exception:
+                raise ValueError("bytes_processed must be an integer or None")
+
+    @property
+    def details(self) -> Dict[str, Any]:
+        """Backwards-compatible read-only accessor for legacy 'details' name."""
+        return self.metrics
+
+
+def serialize_testresult(result: TestResult) -> Dict[str, Any]:
+    """Serialize a TestResult into a JSON-compatible dict following the canonical schema.
+
+    - Merges any legacy `details` dict into `metrics` if present to maintain backwards compatibility.
+    - Exposes observability fields `time_ms` and `bytes_processed` in the serialized output.
+    """
+    # Collect metrics, merging legacy details if present
+    metrics: Dict[str, Any] = {}
+    legacy_details = getattr(result, 'details', None)
+    if isinstance(legacy_details, dict):
+        metrics.update(legacy_details)
+    if isinstance(result.metrics, dict):
+        metrics.update(result.metrics)
+
+    out: Dict[str, Any] = {
+        "test_name": result.test_name,
+        "passed": result.passed,
+        "p_value": result.p_value,
+        "p_values": result.p_values or {},
+        "effect_sizes": result.effect_sizes or {},
+        "flags": result.flags or [],
+        "metrics": metrics,
+        "z_score": result.z_score,
+        "evidence": result.evidence,
+    }
+
+    # Attach observability fields when present
+    if getattr(result, "time_ms", None) is not None:
+        out["time_ms"] = result.time_ms
+    else:
+        out["time_ms"] = None
+
+    if getattr(result, "bytes_processed", None) is not None:
+        out["bytes_processed"] = result.bytes_processed
+    else:
+        out["bytes_processed"] = None
+
+    return out
+
+class BytesView:
+    """Memory-efficient byte view wrapper."""
+
+    def __init__(self, data: Union[bytes, memoryview]):
+        if isinstance(data, bytes):
+            self._view = memoryview(data)
+        else:
+            self._view = data
+
+    @property
+    def data(self) -> memoryview:
+        """Expose underlying memoryview for compatibility with plugins/tests."""
+        return self._view
+
+    def __len__(self) -> int:
+        return len(self._view)
+
+    def __getitem__(self, key):
+        return self._view[key]
+
+    def to_bytes(self) -> bytes:
+        """Convert to bytes."""
+        return bytes(self._view)
+
+    def bit_view(self) -> list[int]:
+        """Get real bit-level view. Returns list of bits (MSB-first per byte)."""
+        try:
+            import numpy as np
+            # Use numpy for a fast bit unpacking from the underlying buffer
+            return np.unpackbits(np.frombuffer(self._view, dtype=np.uint8)).tolist()
+        except ImportError:
+            # Fallback pure-Python implementation (MSB-first per byte)
+            out: list[int] = []
+            for v in self._view.cast('B'):
+                for i in range(7, -1, -1):
+                    out.append((v >> i) & 1)
+            return out
+
+    def text_view(self) -> Optional[str]:
+        """Get text view (placeholder)."""
+        try:
+            return self._view.tobytes().decode("utf-8")
+        except Exception:
+            return None
+
+
+class BasePlugin(ABC):
+    """Base class for all plugins."""
+
+    @abstractmethod
+    def describe(self) -> str:
+        """Return plugin description."""
+        pass
+
+
+class TransformPlugin(BasePlugin):
+    """Base class for transformation plugins."""
+
+    @abstractmethod
+    def run(self, data: BytesView, params: Dict[str, Any]) -> BytesView:
+        """Apply transformation."""
+        pass
+
+
+class TestPlugin(BasePlugin):
+    """Base class for statistical test plugins."""
+ 
+    # Use a plain list as the default for 'requires' to avoid exposing a dataclasses.Field object
+    # when plugins inherit TestPlugin. This keeps runtime attribute access simple and iterable.
+    requires: List[str] = []
+ 
+    @abstractmethod
+    def run(self, data: BytesView, params: Dict[str, Any]) -> TestResult:
+        """Run statistical test."""
+        pass
+
+    def safe_run(self, data: BytesView, params: Dict[str, Any]):
+        """Execute the test and convert unexpected exceptions into a structured error dict.
+
+        Returns:
+            TestResult when the test completes successfully, or
+            dict with keys {"test_name": ..., "status": "error", "reason": "..."} when an exception occurs.
+
+        Note: engine may inject the configured test name into the returned dict if needed.
+        """
+        try:
+            return self.run(data, params)
+        except Exception as e:
+            return {"status": "error", "reason": str(e)}
+
+
+class VisualPlugin(BasePlugin):
+    """Base class for visualization plugins."""
+
+    @abstractmethod
+    def render(self, result: TestResult, params: Dict[str, Any]) -> bytes:
+        """Generate visualization bytes (e.g., SVG/PNG)."""
+        pass
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugin_api.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\__init__.py (78 bytes) ---
+"""PatternLab - Binary pattern analysis framework."""
+
+__version__ = "0.1.0"
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\__init__.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\autocorrelation.py (3074 bytes) ---
+from __future__ import annotations
+from typing import Dict, Any, List
+import math
+
+from patternlab.plugin_api import TestPlugin, TestResult, BytesView
+
+
+class AutocorrelationTest(TestPlugin):
+    """
+    Autocorrelation Test (FFT-based when numpy available)
+
+    - Converts input bytes to +1/-1 samples (MSB-first per byte).
+    - Computes autocorrelation coefficients for lags 0..lag_max (inclusive).
+    - Returns metrics: 'autocorr' (list of floats), 'lags' (list of ints), 'n' (number of samples).
+    """
+
+    def describe(self) -> str:
+        return "autocorrelation"
+
+    def _to_float_samples(self, data: BytesView) -> List[float]:
+        bits = data.bit_view()
+        return [1.0 if b else -1.0 for b in bits]
+
+    def _autocorr_numpy(self, x: List[float], lag_max: int) -> List[float]:
+        import numpy as np  # type: ignore
+        arr = np.asarray(x, dtype=float)
+        n = arr.size
+        # Zero-mean for autocorrelation
+        arr = arr - arr.mean()
+        # FFT based autocorrelation
+        f = np.fft.rfft(arr, n=2 * n)
+        ps = (f * np.conjugate(f)).real
+        corr = np.fft.irfft(ps)[:n]
+        # normalize by number of elements contributing to each lag
+        norm = np.arange(n, 0, -1)
+        corr = corr / norm
+        # return desired lags
+        lmax = min(lag_max, n - 1)
+        return corr[: lmax + 1].tolist()
+
+    def _autocorr_naive(self, x: List[float], lag_max: int) -> List[float]:
+        n = len(x)
+        mean = sum(x) / n if n else 0.0
+        centered = [xi - mean for xi in x]
+        lmax = min(lag_max, n - 1)
+        out: List[float] = []
+        for lag in range(lmax + 1):
+            s = 0.0
+            count = 0
+            for i in range(n - lag):
+                s += centered[i] * centered[i + lag]
+                count += 1
+            out.append(s / count if count else 0.0)
+        return out
+
+    def run(self, data: BytesView, params: Dict[str, Any]) -> TestResult:
+        samples = self._to_float_samples(data)
+        n = len(samples)
+        if n == 0:
+            return TestResult(test_name="autocorrelation", passed=False, p_value=None, category="diagnostic", metrics={"error": "no data"})
+
+        lag_max = int(params.get("lag_max", min(64, max(1, n // 4))))
+
+        try:
+            autocorr = self._autocorr_numpy(samples, lag_max)
+        except Exception:
+            autocorr = self._autocorr_naive(samples, lag_max)
+
+        # Provide simple normalization to autocorrelation at lag 0 = 1.0 if possible
+        if autocorr and abs(autocorr[0]) > 0:
+            autocorr_norm = [float(v / autocorr[0]) for v in autocorr]
+        else:
+            autocorr_norm = [0.0 for _ in autocorr]
+
+        metrics: Dict[str, Any] = {
+            "autocorr": autocorr_norm,
+            "lags": list(range(len(autocorr_norm))),
+            "n": n,
+            "lag_max": lag_max,
+        }
+
+        return TestResult(test_name="autocorrelation", passed=True, p_value=None, category="diagnostic", metrics=metrics)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\autocorrelation.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\binary_matrix_rank.py (5712 bytes) ---
+"""Binary Matrix Rank (GF(2)) test plugin."""
+
+import math
+from ..plugin_api import BytesView, TestResult, TestPlugin
+from typing import List
+
+
+class BinaryMatrixRankTest(TestPlugin):
+    """Binary matrix rank test (GF(2))."""
+
+    requires = ['bits']
+
+    def describe(self) -> str:
+        return "Binary Matrix Rank test over GF(2)"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        bits = data.bit_view()
+        n = len(bits)
+
+        m = int(params.get("matrix_dim", 32))
+        min_matrices = int(params.get("min_matrices", 8))
+        if m <= 0:
+            raise ValueError("matrix_dim must be > 0")
+
+        bits_per_matrix = m * m
+        num_matrices = n // bits_per_matrix
+        if num_matrices < min_matrices:
+            return TestResult(
+                test_name="binary_matrix_rank",
+                passed=True,
+                p_value=1.0,
+                p_values={"binary_matrix_rank": 1.0},
+                metrics={"total_bits": n, "num_matrices": num_matrices, "reason": "insufficient_matrices"},
+            )
+
+        full_rank_count = 0
+        ranks = []
+        for i in range(num_matrices):
+            start = i * bits_per_matrix
+            mat_bits = bits[start:start+bits_per_matrix]
+            rows = []
+            for r in range(m):
+                row_bits = mat_bits[r*m:(r+1)*m]
+                val = 0
+                for bit in row_bits:
+                    val = (val << 1) | (1 if bit else 0)
+                rows.append(val)
+            rank = self._rank_gf2(rows, m)
+            ranks.append(rank)
+            if rank == m:
+                full_rank_count += 1
+
+        # compute exact class probabilities and observed counts for NIST-style 3-class test
+        # class 0: rank == m (full)
+        # class 1: rank == m-1
+        # class 2: rank <= m-2
+        p_full = 1.0
+        for i in range(m):
+            p_full *= (1.0 - 2**(i - m))
+        p_m1 = self._prob_rank(m, m - 1)
+        p_le = max(0.0, 1.0 - p_full - p_m1)
+ 
+        obs_full = sum(1 for r in ranks if r == m)
+        obs_m1 = sum(1 for r in ranks if r == m - 1)
+        obs_le = num_matrices - obs_full - obs_m1
+ 
+        exp_full = p_full * num_matrices
+        exp_m1 = p_m1 * num_matrices
+        exp_le = p_le * num_matrices
+ 
+        chi2 = 0.0
+        for obs, exp in [(obs_full, exp_full), (obs_m1, exp_m1), (obs_le, exp_le)]:
+            if exp > 0.0:
+                chi2 += (obs - exp) ** 2.0 / exp
+ 
+        # p-value: prefer scipy if available, otherwise use exact df=2 survival (exp(-x/2))
+        try:
+            from scipy.stats import chi2 as _chi2
+            p_value = float(_chi2.sf(chi2, 2))
+        except Exception:
+            p_value = math.exp(-chi2 / 2.0)
+ 
+        passed = p_value > float(params.get("alpha", 0.01))
+ 
+        return TestResult(
+            test_name="binary_matrix_rank",
+            passed=passed,
+            p_value=p_value,
+            p_values={"binary_matrix_rank": p_value},
+            metrics={
+                "ranks": ranks,
+                "counts": {"full": obs_full, "m_minus_1": obs_m1, "le_m_minus_2": obs_le},
+                "expected": {"full": exp_full, "m_minus_1": exp_m1, "le_m_minus_2": exp_le},
+                "expected_probs": {"full": p_full, "m_minus_1": p_m1, "le_m_minus_2": p_le},
+                "num_matrices": num_matrices,
+            },
+            chi2=chi2,
+        )
+
+    def _rank_gf2(self, rows: List[int], ncols: int) -> int:
+        """Compute rank of matrix over GF(2) given each row as integer bitmask (MSB-first)."""
+        rows = rows[:]  # copy
+        rank = 0
+        row_idx = 0
+        for col in range(ncols-1, -1, -1):
+            pivot = None
+            for r in range(row_idx, len(rows)):
+                if (rows[r] >> col) & 1:
+                    pivot = r
+                    break
+            if pivot is None:
+                continue
+            # swap
+            rows[row_idx], rows[pivot] = rows[pivot], rows[row_idx]
+            # eliminate
+            for r in range(len(rows)):
+                if r != row_idx and ((rows[r] >> col) & 1):
+                    rows[r] ^= rows[row_idx]
+            row_idx += 1
+            rank += 1
+        return rank
+
+    def _prob_rank(self, m: int, r: int) -> float:
+        """Probability that a random m x m GF(2) matrix has rank r.
+ 
+        Uses exact counting:
+        N(m,r) = (âˆ_{i=0}^{r-1} (2^m - 2^i))^2 / (âˆ_{i=0}^{r-1} (2^r - 2^i))
+        probability = N(m,r) / 2^(m*m)
+        """
+        if r < 0 or r > m:
+            return 0.0
+        if r == m:
+            p = 1.0
+            for i in range(m):
+                p *= (1.0 - 2**(i - m))
+            return p
+        # compute numerator and denominator as big integers to avoid precision loss
+        num = 1
+        for i in range(r):
+            num *= (2**m - 2**i)
+        num = num * num  # square
+        den = 1
+        for i in range(r):
+            den *= (2**r - 2**i)
+        total = num // den
+        p = float(total) / float(2 ** (m * m))
+        return p
+ 
+    def _normal_cdf(self, x: float) -> float:
+        """Approximation of standard normal CDF (Abramowitz-Stegun)."""
+        a1 =  0.254829592
+        a2 = -0.284496736
+        a3 =  1.421413741
+        a4 = -1.453152027
+        a5 =  1.061405429
+        p  =  0.3275911
+ 
+        sign = 1 if x >= 0 else -1
+        x = abs(x) / math.sqrt(2.0)
+ 
+        t = 1.0 / (1.0 + p * x)
+        y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-x * x)
+ 
+        return 0.5 * (1.0 + sign * y)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\binary_matrix_rank.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\block_frequency_test.py (2858 bytes) ---
+"""Block Frequency test plugin (NIST SP 800-22 simplified)."""
+
+import math
+from typing import List
+from ..plugin_api import BytesView, TestResult, TestPlugin
+
+
+class BlockFrequencyTest(TestPlugin):
+    """Block Frequency test.
+
+    Splits bit sequence into blocks of size M, computes proportion of ones in each block,
+    computes chi-square-like statistic and p-value using erfc as in NIST's description.
+    """
+
+    requires = ['bits']
+
+    def describe(self) -> str:
+        return "Block Frequency test (NIST SP 800-22 simplified)"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        bits = data.bit_view()
+        n = len(bits)
+        block_size = int(params.get("block_size", 8))
+        alpha = float(params.get("alpha", 0.01))
+
+        if block_size <= 0:
+            raise ValueError("block_size must be > 0")
+
+        # Number of full blocks
+        block_count = n // block_size
+        if block_count == 0:
+            return TestResult(
+                test_name="block_frequency",
+                passed=True,
+                p_value=1.0,
+                p_values={"block_frequency": 1.0},
+                metrics={"block_count": 0, "block_size": block_size, "total_bits": n},
+            )
+
+        ones_counts: List[int] = []
+        for i in range(block_count):
+            start = i * block_size
+            block = bits[start:start + block_size]
+            ones_counts.append(sum(1 for b in block if b))
+
+        # compute proportions and statistic
+        proportions = [c / block_size for c in ones_counts]
+        chi_square = 0.0
+        for p in proportions:
+            chi_square += (p - 0.5) ** 2
+
+        chi_square *= 4.0 * block_size  # as in NIST
+
+        # p-value using chi-square survival function if scipy is available;
+        # this matches the regularized upper incomplete gamma approach (Igamc).
+        try:
+            from scipy.stats import chi2
+            p_value = float(chi2.sf(chi_square, df=block_count))
+        except Exception:
+            # Fallback to previous approximations if scipy is not installed
+            try:
+                p_value = math.erfc(math.sqrt(chi_square / 2.0))
+            except Exception:
+                p_value = max(0.0, min(1.0, 1.0 - math.exp(-chi_square / 2.0)))
+
+        passed = p_value > alpha
+
+        return TestResult(
+            test_name="block_frequency",
+            passed=passed,
+            p_value=p_value,
+            p_values={"block_frequency": p_value},
+            metrics={
+                "block_count": block_count,
+                "block_size": block_size,
+                "total_bits": n,
+                "ones_counts": ones_counts,
+                "proportions": proportions,
+                "chi_square": chi_square,
+            },
+        )
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\block_frequency_test.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\cusum.py (2851 bytes) ---
+"""Cumulative Sums (Cusum) test plugin."""
+
+import math
+from ..plugin_api import BytesView, TestResult, TestPlugin
+
+
+class CumulativeSumsTest(TestPlugin):
+    """Cumulative sums test (NIST approximate)."""
+
+    requires = ['bits']
+
+    def describe(self) -> str:
+        return "Cumulative sums (Cusum) test for binary sequences"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        bits = data.bit_view()
+        n = len(bits)
+
+        # Minimum data size (NIST recommends reasonably large n; default 100)
+        min_bits = int(params.get('min_bits', 100))
+        if n < min_bits:
+            return TestResult(
+                test_name="cusum",
+                passed=True,
+                p_value=1.0,
+                p_values={"cusum_forward": 1.0, "cusum_backward": 1.0, "cusum": 1.0},
+                metrics={"total_bits": n, "reason": "insufficient_bits"},
+            )
+
+        def _max_abs_cumulative(seq):
+            cum = 0
+            max_abs = 0
+            for b in seq:
+                x = 1 if b else -1
+                cum += x
+                if abs(cum) > max_abs:
+                    max_abs = abs(cum)
+            return max_abs
+
+        # forward direction
+        max_abs_fwd = _max_abs_cumulative(bits)
+        # backward direction (sequence reversed)
+        max_abs_bwd = _max_abs_cumulative(reversed(bits))
+
+        denom = math.sqrt(n) if n > 0 else 1.0
+        z_fwd = (max_abs_fwd / denom)
+        z_bwd = (max_abs_bwd / denom)
+
+        p_fwd = 2.0 * (1.0 - self._normal_cdf(z_fwd))
+        p_bwd = 2.0 * (1.0 - self._normal_cdf(z_bwd))
+
+        # overall p-value is the minimum of the two directions (NIST-style two-sided handling)
+        p_overall = min(p_fwd, p_bwd)
+
+        passed = p_overall > float(params.get("alpha", 0.01))
+
+        return TestResult(
+            test_name="cusum",
+            passed=passed,
+            p_value=p_overall,
+            p_values={
+                "cusum_forward": p_fwd,
+                "cusum_backward": p_bwd,
+                "cusum": p_overall
+            },
+            metrics={
+                "max_cumulative_sum_forward": max_abs_fwd,
+                "max_cumulative_sum_backward": max_abs_bwd,
+                "total_bits": n
+            }
+        )
+
+    def _normal_cdf(self, x: float) -> float:
+        """Approximation of standard normal CDF (Abramowitz-Stegun)."""
+        a1 =  0.254829592
+        a2 = -0.284496736
+        a3 =  1.421413741
+        a4 = -1.453152027
+        a5 =  1.061405429
+        p  =  0.3275911
+
+        sign = 1 if x >= 0 else -1
+        x = abs(x) / math.sqrt(2.0)
+
+        t = 1.0 / (1.0 + p * x)
+        y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-x * x)
+
+        return 0.5 * (1.0 + sign * y)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\cusum.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\fft_placeholder.py (2196 bytes) ---
+from __future__ import annotations
+from typing import Dict, Any, List
+import math
+from patternlab.plugin_api import VisualPlugin, TestResult
+
+class FFTPlaceholder(VisualPlugin):
+    """
+    Hafif bir FFT gÃ¶rselleÅŸtirme placeholder'Ä±.
+
+    Yeni VisualPlugin API'sine uygun `render(self, result: TestResult, params: Dict[str, Any]) -> bytes`
+    imzasÄ±nÄ± uygular ve basit bir SVG spektrum dÃ¶ndÃ¼rÃ¼r.
+    """
+    def describe(self) -> Dict[str, Any]:
+        return {"name": "fft_placeholder", "version": "0.1"}
+
+    def render(self, result: TestResult, params: Dict[str, Any]) -> bytes:
+        # Metric'lerden sayÄ±sal deÄŸerleri al (varsa). DeÄŸer yoksa Ã¶rnek veri Ã¼ret.
+        metrics = {}
+        if isinstance(getattr(result, "metrics", None), dict):
+            metrics = result.metrics
+
+        values: List[float] = []
+        # Sadece sayÄ±sal metrikleri al, sÄ±ralÄ± ÅŸekilde
+        for k in sorted(metrics.keys()):
+            try:
+                values.append(float(metrics[k]))
+            except Exception:
+                continue
+
+        if not values:
+            # Ã–rnek spektrum: birkaÃ§ sinÃ¼s dalgasÄ±nÄ±n toplamÄ± -> pozitif magnitÃ¼dler
+            values = [abs(math.sin(i * 0.3) * (1 + 0.5 * math.cos(i * 0.1))) for i in range(16)]
+
+        # SVG oluÅŸtur
+        width = int(params.get("width", 400))
+        height = int(params.get("height", 120))
+        padding = 4
+        n = len(values)
+        max_v = max(values) if values else 1.0
+        bar_w = (width - 2 * padding) / max(1, n)
+
+        parts: List[str] = []
+        parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">')
+        parts.append(f'<rect width="100%" height="100%" fill="#ffffff"/>')
+        for i, v in enumerate(values):
+            h = (v / max_v) * (height - 2 * padding)
+            x = padding + i * bar_w
+            y = height - padding - h
+            parts.append(f'<rect x="{x:.2f}" y="{y:.2f}" width="{bar_w*0.9:.2f}" height="{h:.2f}" fill="#4a90e2"/>')
+        parts.append('</svg>')
+
+        svg = "\n".join(parts)
+        return svg.encode("utf-8")
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\fft_placeholder.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\fft_spectral.py (6121 bytes) ---
+from __future__ import annotations
+from typing import Dict, Any, List, Tuple
+import math
+import cmath
+
+from patternlab.plugin_api import TestPlugin, TestResult, BytesView
+# Limit for naive DFT fallback (bits). If data is larger than this and we must use naive DFT,
+# we will downsample to avoid O(N^2) blowup.
+NAIVE_DFT_BIT_LIMIT = 64 * 1024  # 64K bits
+
+
+def _dft_magnitudes(samples: List[float]) -> List[float]:
+    """Compute DFT magnitudes (naive O(N^2)) - used as a fallback when numpy is unavailable."""
+    n = len(samples)
+    mags: List[float] = []
+    for k in range(n):
+        s = 0+0j
+        for t, x in enumerate(samples):
+            angle = -2j * math.pi * k * t / n
+            s += x * cmath.exp(angle)
+        mags.append(abs(s))
+    return mags
+
+
+class FFTSpectralTest(TestPlugin):
+    """
+    FFT Spectral Test
+
+    - Converts input bytes to a bit sequence (MSB-first per byte).
+    - Computes DFT magnitudes (uses numpy if available, otherwise a naive DFT).
+    - Finds the largest spectral peak and estimates SNR against the median noise floor.
+    - Reports metrics:
+        - peak_snr_db: estimated SNR in dB for the largest peak
+        - peak_index: index of the spectral peak
+        - peak_magnitude: magnitude of the peak
+        - noise_floor: estimated noise floor magnitude
+    """
+
+    def describe(self) -> str:
+        return "fft_spectral"
+
+    def _to_float_samples(self, data: BytesView) -> List[float]:
+        # Represent bits as +1/-1 for spectral analysis (common in randomness tests).
+        bits = data.bit_view()
+        return [1.0 if b else -1.0 for b in bits]
+
+    def _compute_magnitudes(self, samples: List[float]):
+        """Compute magnitudes and return (mags, info).
+
+        Tries to use SciPy (preferred) or NumPy FFT backends. If neither is available,
+        falls back to the naive O(N^2) DFT but enforces NAIVE_DFT_BIT_LIMIT by downsampling
+        to avoid excessive CPU/time.
+        """
+        info: Dict[str, Any] = {}
+        try:
+            import numpy as np  # type: ignore
+            has_numpy = True
+        except Exception:
+            np = None  # type: ignore
+            has_numpy = False
+
+        backend = None
+        if has_numpy:
+            try:
+                import scipy.fft as spfft  # type: ignore
+                backend = spfft
+                info["profile"] = "scipy"
+            except Exception:
+                backend = np.fft
+                info["profile"] = "numpy"
+
+        n = len(samples)
+        info["original_n"] = n
+
+        # If no fast backend, use naive DFT but limit the sample count
+        if backend is None:
+            info.setdefault("profile", "naive")
+            used_n = n
+            if n > NAIVE_DFT_BIT_LIMIT:
+                stride = math.ceil(n / NAIVE_DFT_BIT_LIMIT)
+                samples = samples[::stride]
+                used_n = len(samples)
+                info["downsampled"] = True
+            else:
+                info["downsampled"] = False
+            info["used_n"] = used_n
+            return _dft_magnitudes(samples), info
+
+        # Use backend rfft for real-valued input
+        try:
+            arr = np.asarray(samples, dtype=float)
+            spec = backend.rfft(arr) if hasattr(backend, "rfft") else np.fft.rfft(arr)
+            mags = np.abs(spec).tolist()
+            info["used_n"] = n
+            return mags, info
+        except Exception:
+            # On any failure, fall back to naive DFT with the same safety limit
+            info["profile"] = "naive"
+            used_n = n
+            if n > NAIVE_DFT_BIT_LIMIT:
+                stride = math.ceil(n / NAIVE_DFT_BIT_LIMIT)
+                samples = samples[::stride]
+                used_n = len(samples)
+                info["downsampled"] = True
+            else:
+                info["downsampled"] = False
+            info["used_n"] = used_n
+            return _dft_magnitudes(samples), info
+
+    def run(self, data: BytesView, params: Dict[str, Any]) -> TestResult:
+        """
+        Run the FFT spectral test and return a TestResult with metrics.
+        This test does not produce a formal p-value; set p_value to 1.0 for compatibility.
+        """
+        samples = self._to_float_samples(data)
+        if not samples:
+            return TestResult(test_name="fft_spectral", passed=False, p_value=None, category="diagnostic",
+                              metrics={"error": "no data"})
+
+        mags, info = self._compute_magnitudes(samples)
+        
+        # ignore the DC bin when searching for a peak if length > 1
+        search_mags = mags[1:] if len(mags) > 1 else mags[:]
+        peak_rel_index = int(max(range(len(search_mags)), key=lambda i: search_mags[i]))
+        peak_index = peak_rel_index + (1 if len(mags) > 1 else 0)
+        peak_mag = float(mags[peak_index])
+        
+        # Estimate noise floor: median of magnitudes excluding the top 3 peaks
+        sorted_mags = sorted(mags)
+        # remove the largest few bins to avoid peak bias
+        trimmed = sorted_mags[:-3] if len(sorted_mags) > 3 else sorted_mags
+        noise_floor = float(max(1e-12, (sum(trimmed) / len(trimmed)) if trimmed else 1.0))
+        
+        # SNR in dB
+        peak_snr_db = 20.0 * math.log10(max(1e-12, peak_mag / noise_floor))
+        
+        metrics: Dict[str, Any] = {
+            "peak_snr_db": peak_snr_db,
+            "peak_index": peak_index,
+            "peak_magnitude": peak_mag,
+            "noise_floor": noise_floor,
+            "n": len(samples),
+        }
+        
+        # Merge backend/profile info for visibility (profile: "scipy"/"numpy"/"naive",
+        # optional keys: original_n, used_n, downsampled)
+        if isinstance(info, dict):
+            metrics.update(info)
+        
+        # Pass/fail heuristic (not authoritative) -- kept permissive so tests focus on metrics
+        passed = True
+        return TestResult(test_name="fft_spectral", passed=passed, p_value=None, category="diagnostic", metrics=metrics)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\fft_spectral.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\linear_complexity.py (2340 bytes) ---
+from __future__ import annotations
+from typing import Dict, Any, List
+
+from patternlab.plugin_api import TestPlugin, TestResult, BytesView
+
+
+def berlekamp_massey(sequence: List[int]) -> int:
+    """
+    Berlekamp-Massey algorithm over GF(2).
+    Returns the linear complexity L of the binary sequence (list of 0/1).
+    """
+    n = len(sequence)
+    C = [0] * (n + 1)
+    B = [0] * (n + 1)
+    C[0] = 1
+    B[0] = 1
+    L = 0
+    m = 1
+    b = 1
+
+    for N in range(n):
+        # discrepancy d
+        d = sequence[N]
+        for i in range(1, L + 1):
+            d ^= (C[i] & sequence[N - i])
+        if d == 1:
+            # T = C (copy)
+            T = C.copy()
+            # C = C xor (B << m)
+            for i in range(0, n - m + 1):
+                if B[i] == 1:
+                    C[i + m] ^= 1
+            if 2 * L <= N:
+                L_new = N + 1 - L
+                B = T
+                L = N + 1 - L
+                m = 1
+                b = d
+            else:
+                m += 1
+        else:
+            m += 1
+
+    return L
+
+
+class LinearComplexityTest(TestPlugin):
+    """
+    Linear Complexity Test
+
+    - Converts input bytes to a binary sequence (MSB-first per byte).
+    - Applies Berlekamp-Massey algorithm over GF(2) to compute linear complexity.
+    - Returns TestResult with metrics:
+        - linear_complexity: int
+        - n: length of bit sequence
+    """
+
+    def describe(self) -> str:
+        return "linear_complexity"
+
+    def _to_bits(self, data: BytesView) -> List[int]:
+        # Use BytesView.bit_view which returns MSB-first per byte
+        return data.bit_view()
+
+    def run(self, data: BytesView, params: Dict[str, Any]) -> TestResult:
+        bits = self._to_bits(data)
+        n = len(bits)
+        if n == 0:
+            return TestResult(test_name="linear_complexity", passed=False, p_value=None, category="diagnostic", metrics={"error": "no data"})
+
+        L = berlekamp_massey(bits)
+
+        metrics: Dict[str, Any] = {
+            "linear_complexity": int(L),
+            "n": n,
+        }
+    
+        # No formal p-value: mark as diagnostic and exclude from FDR calculations.
+        return TestResult(test_name="linear_complexity", passed=True, p_value=None, category="diagnostic", metrics=metrics)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\linear_complexity.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\longest_run.py (7446 bytes) ---
+"""Longest Run of Ones in a Block test plugin aligned to NIST table-driven categories.
+
+- Provides fixed category thresholds and probabilities for m=8, m=128 and m=10000.
+- Uses SciPy's chi2.sf when available to compute exact p-values; falls back to
+  Wilsonâ€“Hilferty approximation otherwise.
+- Reports detailed metrics including counts, expected, chi2, dof and method used.
+"""
+
+from typing import List, Dict
+import math
+from ..plugin_api import BytesView, TestResult, TestPlugin
+
+# Table definitions for supported block sizes (m).
+# Each entry provides:
+#  - "probs": list of expected probabilities for the categories (must sum to ~1.0)
+#  - "bins": thresholds used to map observed longest runs into categories.
+#    bins contains the upper threshold for each category except the last which is >= threshold.
+# The number of categories = len(probs)
+_TABLES: Dict[int, Dict[str, List[int]]] = {
+    8: {
+        # NIST-like probabilities for m=8, categories: v <=1, v=2, v=3, v>=4
+        "probs": [0.2148, 0.3672, 0.2305, 0.1875],
+        "bins": [1, 2, 3],  # final category is >=4
+        "labels": ["<=1", "2", "3", ">=4"],
+    },
+    128: {
+        # NIST-like probabilities (6 categories) for m=128
+        # categories mapped to thresholds below (these thresholds are the run-length
+        # thresholds for categorization; exact NIST thresholds are used here in spirit)
+        "probs": [0.1174, 0.2430, 0.2493, 0.1752, 0.1027, 0.1124],
+        "bins": [10, 11, 12, 13, 14],  # last category >=15
+        "labels": ["<=10", "11", "12", "13", "14", ">=15"],
+    },
+    10000: {
+        # NIST-like probabilities (6 categories) for m=10000 (approximate)
+        # These probabilities are the tabulated expected frequencies used by NIST-style tests.
+        "probs": [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.1402],
+        # thresholds are approximate longest-run thresholds for very large block sizes
+        "bins": [267, 268, 269, 270, 271],  # last category >=272
+        "labels": ["<=267", "268", "269", "270", "271", ">=272"],
+    },
+}
+
+
+class LongestRunOnesTest(TestPlugin):
+    """Longest run of ones in a block using table-driven categories (NIST-aligned)."""
+
+    requires = ["bits"]
+
+    def describe(self) -> str:
+        return "Longest run of ones in a block (NIST table-aligned)"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        bits = data.bit_view()
+        n = len(bits)
+
+        block_size = int(params.get("block_size", 8))
+        min_blocks = int(params.get("min_blocks", 8))
+        alpha = float(params.get("alpha", 0.01))
+
+        if block_size <= 0:
+            raise ValueError("block_size must be > 0")
+
+        num_blocks = n // block_size
+        if num_blocks < min_blocks:
+            return TestResult(
+                test_name="longest_run_ones",
+                passed=True,
+                p_value=1.0,
+                p_values={"longest_run_ones": 1.0},
+                metrics={"total_bits": n, "num_blocks": num_blocks, "reason": "insufficient_blocks"},
+            )
+
+        # compute longest run per block
+        longest_runs: List[int] = []
+        for i in range(num_blocks):
+            block = bits[i * block_size : (i + 1) * block_size]
+            max_run = 0
+            cur = 0
+            for b in block:
+                if b:
+                    cur += 1
+                    if cur > max_run:
+                        max_run = cur
+                else:
+                    cur = 0
+            longest_runs.append(max_run)
+
+        # Select table if available, otherwise fallback to a coarse 4-bin uniform probability table.
+        table = _TABLES.get(block_size)
+        if table is None:
+            # Fallback: 4 equal-probability bins based on run-length percentiles
+            probs = [0.25, 0.25, 0.25, 0.25]
+            bins = [
+                max(1, block_size // 8),
+                max(2, block_size // 4),
+                max(3, block_size // 2),
+            ]
+            labels = ["small", "medium", "large", "xlarge"]
+        else:
+            probs = table["probs"]
+            bins = table["bins"]
+            labels = table.get("labels", [f"cat{i}" for i in range(len(probs))])
+
+        # Map runs into categories (counts)
+        counts = [0] * len(probs)
+        for r in longest_runs:
+            placed = False
+            for idx, threshold in enumerate(bins):
+                # for all but last threshold, category is r <= threshold
+                if r <= threshold:
+                    counts[idx] += 1
+                    placed = True
+                    break
+            if not placed:
+                # last category (>= last threshold + 1)
+                counts[-1] += 1
+
+        expected_counts = [p * num_blocks for p in probs]
+
+        # Compute chi-square statistic
+        chi2_stat = 0.0
+        for o, e in zip(counts, expected_counts):
+            if e > 0:
+                chi2_stat += ((o - e) ** 2) / e
+
+        dof = max(1, len(probs) - 1)
+
+        # Try to use SciPy's survival function for chi2 if available (more accurate).
+        method = "wilson"
+        p_value = None
+        zscore = None
+        try:
+            from scipy.stats import chi2 as _chi2
+
+            # chi2.sf returns the upper-tail probability P(X >= chi2_stat)
+            p_value = float(_chi2.sf(chi2_stat, dof))
+            method = "scipy"
+        except Exception:
+            # Wilsonâ€“Hilferty approximation to convert chi-square to approx normal and get upper-tail p.
+            # transform: Z â‰ˆ ( (X/dof)^(1/3) - (1 - 2/(9*dof)) ) / sqrt(2/(9*dof))
+            try:
+                w = (chi2_stat / dof) ** (1.0 / 3.0)
+                mu = 1.0 - 2.0 / (9.0 * dof)
+                sigma = math.sqrt(2.0 / (9.0 * dof))
+                zscore = (w - mu) / sigma
+                # upper tail p-value
+                p_value = 1.0 - self._normal_cdf(zscore)
+                method = "wilson"
+            except Exception:
+                p_value = None
+
+        if p_value is not None:
+            p_value = max(0.0, min(1.0, p_value))
+
+        passed = True if p_value is None else (p_value > alpha)
+
+        metrics = {
+            "counts": counts,
+            "expected": expected_counts,
+            "chi2": chi2_stat,
+            "dof": dof,
+            "num_blocks": num_blocks,
+            "total_bits": n,
+            "method": method,
+            "labels": labels,
+        }
+
+        if zscore is not None:
+            metrics["zscore"] = zscore
+
+        return TestResult(
+            test_name="longest_run_ones",
+            passed=passed,
+            p_value=p_value,
+            p_values={"longest_run_ones": p_value} if p_value is not None else {},
+            metrics=metrics,
+            z_score=zscore,
+        )
+
+    def _normal_cdf(self, x: float) -> float:
+        """Approximation of standard normal CDF (Abramowitz-Stegun)."""
+        a1 = 0.254829592
+        a2 = -0.284496736
+        a3 = 1.421413741
+        a4 = -1.453152027
+        a5 = 1.061405429
+        p = 0.3275911
+
+        sign = 1 if x >= 0 else -1
+        x = abs(x) / math.sqrt(2.0)
+
+        t = 1.0 / (1.0 + p * x)
+        y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-x * x)
+
+        return 0.5 * (1.0 + sign * y)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\longest_run.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\monobit.py (1936 bytes) ---
+"""Monobit test plugin."""
+
+import math
+from ..plugin_api import BytesView, TestResult, TestPlugin
+
+
+class MonobitTest(TestPlugin):
+    """Monobit frequency test plugin."""
+
+    requires = ['bits']
+
+    def describe(self) -> str:
+        """Return plugin description."""
+        return "Monobit frequency test for binary sequences"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        """Run monobit test."""
+        # BytesView.bit_view now returns a flat list of bits (0/1)
+        bits = data.bit_view()  # list of 0/1
+        n = len(bits)
+        ones_count = sum(bits)
+    
+        if n == 0:
+            return TestResult(
+                test_name="monobit",
+                passed=True,
+                p_value=1.0,
+                z_score=0.0,
+                metrics={"ones_count": 0, "total_bits": 0},
+            )
+        z = (2 * ones_count - n) / math.sqrt(n)
+        p = 2 * (1 - self._normal_cdf(abs(z)))
+        passed = p > float(params.get("alpha", 0.01))
+        return TestResult(
+            test_name="monobit",
+            passed=passed,
+            p_value=p,
+            z_score=z,
+            metrics={"ones_count": ones_count, "total_bits": n},
+            p_values={"monobit": p},
+        )
+
+    def _normal_cdf(self, x: float) -> float:
+        """Approximation of standard normal cumulative distribution function."""
+        # Abramowitz and Stegun approximation
+        a1 =  0.254829592
+        a2 = -0.284496736
+        a3 =  1.421413741
+        a4 = -1.453152027
+        a5 =  1.061405429
+        p  =  0.3275911
+
+        # Save sign and take absolute value
+        sign = 1 if x >= 0 else -1
+        x = abs(x) / math.sqrt(2.0)
+
+        # A&S formula 7.1.26
+        t = 1.0 / (1.0 + p * x)
+        y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-x * x)
+
+        return 0.5 * (1.0 + sign * y)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\monobit.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\runs_test.py (2594 bytes) ---
+"""Runs test plugin (Waldâ€“Wolfowitz)."""
+
+import math
+from typing import List
+from ..plugin_api import BytesView, TestResult, TestPlugin
+
+
+class RunsTest(TestPlugin):
+    """Waldâ€“Wolfowitz runs test implementation."""
+
+    requires = ['bits']
+
+    def describe(self) -> str:
+        return "Runs test (Waldâ€“Wolfowitz) for binary sequences"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        """Execute runs test."""
+        bits = data.bit_view()
+
+        total_bits = len(bits)
+        ones = sum(1 for b in bits if b)
+        zeros = total_bits - ones
+
+        min_bits = int(params.get('min_bits', 20))
+        if total_bits < min_bits:
+            return TestResult(
+                test_name="runs",
+                passed=True,
+                p_value=1.0,
+                p_values={"runs": 1.0},
+                metrics={"ones": ones, "zeros": zeros, "runs": 0, "total_bits": total_bits},
+            )
+
+        # count runs
+        runs = 0
+        prev = None
+        for b in bits:
+            if prev is None or b != prev:
+                runs += 1
+            prev = b
+
+        n = total_bits
+        n1 = ones
+        n2 = zeros
+
+        # expected runs and variance (approximation)
+        expected_runs = (2.0 * n1 * n2) / n + 1.0
+        denom = (n * n * (n - 1)) if n > 1 else 1.0
+        variance = (2.0 * n1 * n2 * (2.0 * n1 * n2 - n)) / denom if n > 1 else 0.0
+
+        if variance <= 0.0:
+            p_value = 1.0
+            z_score = 0.0
+        else:
+            z_score = (runs - expected_runs) / math.sqrt(variance)
+            abs_z = abs(z_score)
+            p_value = 2.0 * (1.0 - self._normal_cdf(abs_z))
+
+        passed = p_value > float(params.get('alpha', 0.01))
+
+        return TestResult(
+            test_name="runs",
+            passed=passed,
+            p_value=p_value,
+            p_values={"runs": p_value},
+            metrics={"ones": ones, "zeros": zeros, "runs": runs, "total_bits": total_bits},
+            z_score=z_score
+        )
+
+    def _normal_cdf(self, x: float) -> float:
+        """Approximation of the standard normal CDF (Abramowitz-Stegun)."""
+        a1 = 0.254829592
+        a2 = -0.284496736
+        a3 = 1.421413741
+        a4 = -1.453152027
+        a5 = 1.061405429
+        p = 0.3275911
+
+        sign = 1 if x >= 0 else -1
+        x = abs(x) / math.sqrt(2.0)
+        t = 1.0 / (1.0 + p * x)
+        y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-x * x)
+        return 0.5 * (1.0 + sign * y)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\runs_test.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\serial_test.py (3502 bytes) ---
+"""Serial test plugin (chi-square on 1..max_m grams)."""
+
+import math
+from typing import Dict, List
+from collections import Counter
+from ..plugin_api import BytesView, TestResult, TestPlugin
+
+
+class SerialTest(TestPlugin):
+    """Serial test: chi-square goodness-of-fit for m-grams (1..max_m)."""
+
+    requires = ['bits']
+
+    def describe(self) -> str:
+        return "Serial test (chi-square over 1..max_m grams)"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        bits = data.bit_view()
+        n = len(bits)
+        max_m = int(params.get("max_m", 4))
+        alpha = float(params.get("alpha", 0.01))
+
+        if n == 0:
+            return TestResult(
+                test_name="serial",
+                passed=True,
+                p_value=1.0,
+                p_values={},
+                metrics={"total_bits": 0, "max_m": max_m},
+            )
+
+        p_values: Dict[str, float] = {}
+        metrics: Dict[str, object] = {"total_bits": n, "max_m": max_m, "details": {}}
+
+        overall_pass = True
+        worst_p = 1.0
+        # For each m from 1..max_m compute chi-square over all 2^m patterns
+        for m in range(1, max_m + 1):
+            if n < m:
+                p = 1.0
+                chi2 = 0.0
+                metrics["details"][f"m_{m}"] = {"count": 0, "chi2": chi2}
+                p_values[f"m_{m}"] = p
+                continue
+
+            total_ngrams = n - m + 1  # overlapping n-grams
+            counts = Counter()
+
+            # build integer patterns for efficiency
+            window = 0
+            mask = (1 << m) - 1
+            # initialize first window if possible
+            for i in range(m):
+                window = (window << 1) | (bits[i] & 1)
+            counts[window] += 1
+            for i in range(m, n):
+                window = ((window << 1) & mask) | (bits[i] & 1)
+                counts[window] += 1
+
+            expected = total_ngrams / float(1 << m)
+            chi2 = 0.0
+            for pattern in range(1 << m):
+                obs = counts.get(pattern, 0)
+                # If expected is zero (shouldn't happen), skip
+                if expected > 0:
+                    chi2 += (obs - expected) ** 2 / expected
+
+            # degrees of freedom = 2^m - 1
+            df = (1 << m) - 1
+
+            # compute p-value using chi-square survival function if scipy is available;
+            # this corresponds to the regularized upper incomplete gamma (Igamc).
+            try:
+                from scipy.stats import chi2 as _chi2
+                p_value = float(_chi2.sf(chi2, df=df))
+            except Exception:
+                # Fallback to previous exponential approximation if scipy is not installed
+                try:
+                    p_value = math.exp(-chi2 / 2.0)
+                    p_value = max(0.0, min(1.0, p_value))
+                except Exception:
+                    p_value = 1.0
+
+            p_values[f"m_{m}"] = p_value
+            metrics["details"][f"m_{m}"] = {"count": total_ngrams, "chi2": chi2, "df": df, "expected": expected}
+
+            if p_value <= alpha:
+                overall_pass = False
+            if p_value < worst_p:
+                worst_p = p_value
+
+        overall_p = worst_p
+        return TestResult(
+            test_name="serial",
+            passed=overall_pass,
+            p_value=overall_p,
+            p_values=p_values,
+            metrics=metrics
+        )
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\serial_test.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\vigenere.py (1536 bytes) ---
+from __future__ import annotations
+from typing import Dict, Any, Optional
+from patternlab.plugin_api import BytesView, TransformPlugin
+
+class VigenerePlugin(TransformPlugin):
+    """
+    Basit VigenÃ¨re tarzÄ± transform plugin'i.
+    Params:
+      - key: bytes or str
+      - mode: 'enc' veya 'dec' (default 'enc')
+    Not: demo amaÃ§lÄ±; kÃ¼Ã§Ã¼k veri iÃ§in gÃ¼venli deÄŸil.
+    """
+    def describe(self) -> Dict[str,Any]:
+        return {
+            "name": "vigenere",
+            "version": "0.1",
+            "params": {
+                "key": {"type": "bytes", "min_len": 1},
+                "mode": {"type": "str", "enum": ["enc", "dec"], "default": "enc"}
+            }
+        }
+
+    def run(self, b: BytesView, params: Dict[str, Any]) -> BytesView:
+        key = params.get("key", b"KEY")
+        if isinstance(key, str):
+            key_bytes = key.encode()
+        elif isinstance(key, (bytes, bytearray)):
+            key_bytes = bytes(key)
+        else:
+            raise TypeError("key must be bytes or str")
+ 
+        mode = params.get("mode", "enc")
+        # Use BytesView API to obtain bytes (compatible with plugin_api.BytesView)
+        data = b.to_bytes()
+        out = bytearray(len(data))
+        klen = len(key_bytes)
+        for i, x in enumerate(data):
+            k = key_bytes[i % klen]
+            if mode == "enc":
+                out[i] = (x + k) & 0xFF
+            else:
+                out[i] = (x - k) & 0xFF
+        return BytesView(memoryview(bytes(out)))
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\vigenere.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\xor_const.py (803 bytes) ---
+"""XOR constant transform plugin."""
+
+from ..plugin_api import BytesView, TransformPlugin
+
+
+class XOPlugin(TransformPlugin):
+    """XOR transform plugin that applies constant XOR to bytes."""
+
+    def describe(self) -> str:
+        """Return plugin description."""
+        return "Applies XOR transformation with constant value"
+
+    def run(self, data: BytesView, params: dict) -> BytesView:
+        """Apply XOR transformation."""
+        xor_value = params.get('xor_value', 0x00)
+        if not isinstance(xor_value, int) or not (0 <= xor_value <= 255):
+            raise ValueError("xor_value must be an integer between 0 and 255")
+
+        # Convert to bytes and apply XOR
+        transformed = bytes(b ^ xor_value for b in data.to_bytes())
+        return BytesView(transformed)
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\xor_const.py ---
+
+--- START: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\__init__.py (33 bytes) ---
+"""PatternLab plugins package."""
+--- END: A:\Users\Edige\GitHub\pattern-analyzer\patternlab\plugins\__init__.py ---

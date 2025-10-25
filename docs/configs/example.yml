@@ -1,0 +1,32 @@
+transforms:
+  - name: xor_const
+    params:
+      xor_value: 55
+
+tests:
+  - name: monobit
+    params:
+      alpha: 0.01
+  - name: runs
+    params:
+      min_bits: 20
+      alpha: 0.01
+  - name: block_frequency
+    params:
+      block_size: 8
+      alpha: 0.01
+  - name: serial
+    params:
+      max_m: 4
+      alpha: 0.01
+  - name: fft_spectral
+    params: {}
+
+fdr_q: 0.05
+visuals:
+  fft_placeholder:
+    mime: "image/svg+xml"
+    width: 600
+    height: 160
+html_report: "reports/report.html"
+log_path: "reports/tests.log"
