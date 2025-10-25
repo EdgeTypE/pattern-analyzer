@@ -1,0 +1,19 @@
+site_name: PatternLab Documentation
+site_description: "Kapsamlı dokümantasyon sitesi"
+site_author: PatternLab
+repo_url: https://github.com/<owner>/pattern-analyzer
+site_url: https://<owner>.github.io/pattern-analyzer
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guide: user-guide.md
+  - Plugin Developer Guide: plugin-developer-guide.md
+  - API Reference: api-reference.md
+  - Test Reference: test-reference.md
+  - Configs:
+      - Example YAML: configs/example.yml
+      - Example JSON: configs/example.json
+theme:
+  name: material
+plugins:
+  - search

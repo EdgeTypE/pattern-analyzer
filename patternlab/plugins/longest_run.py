@@ -67,6 +67,7 @@ class LongestRunOnesTest(TestPlugin):
                 test_name="longest_run_ones",
                 passed=True,
                 p_value=1.0,
+                category="statistical",
                 p_values={"longest_run_ones": 1.0},
                 metrics={"total_bits": n, "num_blocks": num_blocks, "reason": "insufficient_blocks"},
             )
@@ -173,6 +174,7 @@ class LongestRunOnesTest(TestPlugin):
             test_name="longest_run_ones",
             passed=passed,
             p_value=p_value,
+            category="statistical",
             p_values={"longest_run_ones": p_value} if p_value is not None else {},
             metrics=metrics,
             z_score=zscore,

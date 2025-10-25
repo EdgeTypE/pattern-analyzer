@@ -35,18 +35,35 @@ patternlab = "patternlab.cli:cli"
 
 
 [project.entry-points."patternlab.plugins"]
-xor_const = "patternlab.plugins.xor_const:XOPlugin"
-monobit = "patternlab.plugins.monobit:MonobitTest"
-vigenere = "patternlab.plugins.vigenere:VigenerePlugin"
+# Auto-generated: map all discovered plugin modules -> their export symbols
+# Selection rules used:
+#  - Prefer explicit well-known export/class names when present (ENTRY_POINT, PLUGIN, Plugin, make_plugin, load_plugin)
+#  - Otherwise use the single TestPlugin/VisualPlugin-derived class defined in the module.
+# Notes:
+#  - patternlab.plugins.parallel_helpers defines two test classes; both are registered intentionally.
+approximate_entropy = "patternlab.plugins.approximate_entropy:ApproximateEntropyTest"
+autocorrelation = "patternlab.plugins.autocorrelation:AutocorrelationTest"
+binary_matrix_rank = "patternlab.plugins.binary_matrix_rank:BinaryMatrixRankTest"
 block_frequency = "patternlab.plugins.block_frequency_test:BlockFrequencyTest"
+cusum = "patternlab.plugins.cusum:CumulativeSumsTest"
+fft_placeholder = "patternlab.plugins.fft_placeholder:FFTPlaceholder"
+fft_spectral = "patternlab.plugins.fft_spectral:FFTSpectralTest"
+linear_complexity = "patternlab.plugins.linear_complexity:LinearComplexityTest"
+longest_run = "patternlab.plugins.longest_run:LongestRunOnesTest"
+maurers_universal = "patternlab.plugins.maurers_universal:MaurersUniversalTest"
+monobit = "patternlab.plugins.monobit:MonobitTest"
+nist_dft_spectral = "patternlab.plugins.nist_dft_spectral:NISTDFTSpectralTest"
+non_overlapping_template_matching = "patternlab.plugins.non_overlapping_template_matching:NonOverlappingTemplateMatching"
+overlapping_template_matching = "patternlab.plugins.overlapping_template_matching:OverlappingTemplateMatching"
+random_excursions_variant = "patternlab.plugins.random_excursions_variant:RandomExcursionsVariantTest"
+random_excursions = "patternlab.plugins.random_excursions:RandomExcursionsTest"
 runs = "patternlab.plugins.runs_test:RunsTest"
 serial = "patternlab.plugins.serial_test:SerialTest"
-fft_spectral = "patternlab.plugins.fft_spectral:FFTSpectralTest"
-autocorrelation = "patternlab.plugins.autocorrelation:AutocorrelationTest"
-linear_complexity = "patternlab.plugins.linear_complexity:LinearComplexityTest"
-cusum = "patternlab.plugins.cusum:CumulativeSumsTest"
-binary_matrix_rank = "patternlab.plugins.binary_matrix_rank:BinaryMatrixRankTest"
-longest_run = "patternlab.plugins.longest_run:LongestRunOnesTest"
+vigenere = "patternlab.plugins.vigenere:VigenerePlugin"
+xor_const = "patternlab.plugins.xor_const:XOPlugin"
+# parallel_helpers exposes two TestPlugin implementations used in tests; keep both entry points.
+parallel_quick_stat = "patternlab.plugins.parallel_helpers:QuickStat"
+parallel_blocking = "patternlab.plugins.parallel_helpers:BlockingTest"
 [project.urls]
 Homepage = "https://github.com/example/patternlab"
 Repository = "https://github.com/example/patternlab.git"

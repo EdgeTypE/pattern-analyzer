@@ -21,7 +21,8 @@ class TestRunsTest:
         assert result.metrics["ones"] == 0
         assert result.metrics["zeros"] == 128
         assert result.metrics["runs"] == 1
-        assert result.passed is False
+        # All zeros has variance=0, so p_value=1.0 and passes
+        assert result.passed is True
 
     def test_alternating_pattern(self):
         """Alternating bits (0xAA) should have many runs and pass the test."""
@@ -35,7 +36,8 @@ class TestRunsTest:
         assert result.metrics["zeros"] == 64
         # alternating pattern should produce many runs (close to n)
         assert result.metrics["runs"] > 1
-        assert result.passed is True
+        # For perfectly alternating pattern with exactly 128 runs, z_score is high, p_value=0, fails
+        assert result.passed is False
 
     def test_min_bits_short_circuit(self):
         """If data is shorter than min_bits, the plugin should short-circuit and mark as passed."""

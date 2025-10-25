@@ -10,9 +10,17 @@ class RunsTest(TestPlugin):
 
     requires = ['bits']
 
+    def __init__(self):
+        # Streaming accumulators
+        self._runs = 0
+        self._prev = None
+        self._total_bits = 0
+        self._ones = 0
+
     def describe(self) -> str:
         return "Runs test (Wald–Wolfowitz) for binary sequences"
 
+    # Batch API (unchanged)
     def run(self, data: BytesView, params: dict) -> TestResult:
         """Execute runs test."""
         bits = data.bit_view()
@@ -27,6 +35,7 @@ class RunsTest(TestPlugin):
                 test_name="runs",
                 passed=True,
                 p_value=1.0,
+                category="statistical",
                 p_values={"runs": 1.0},
                 metrics={"ones": ones, "zeros": zeros, "runs": 0, "total_bits": total_bits},
             )
@@ -62,6 +71,74 @@ class RunsTest(TestPlugin):
             test_name="runs",
             passed=passed,
             p_value=p_value,
+            category="statistical",
+            p_values={"runs": p_value},
+            metrics={"ones": ones, "zeros": zeros, "runs": runs, "total_bits": total_bits},
+            z_score=z_score
+        )
+
+    # Streaming API
+    def update(self, chunk: bytes, params: dict) -> None:
+        """Update running counts from a raw bytes chunk."""
+        if not chunk:
+            return
+        bv = BytesView(chunk)
+        bits = bv.bit_view()
+        for b in bits:
+            self._total_bits += 1
+            if b:
+                self._ones += 1
+            if self._prev is None or b != self._prev:
+                self._runs += 1
+            self._prev = b
+
+    def finalize(self, params: dict) -> TestResult:
+        """Finalize streaming aggregation and return TestResult, then reset accumulators."""
+        total_bits = self._total_bits
+        ones = self._ones
+        zeros = total_bits - ones
+        runs = self._runs
+
+        # Reset state
+        self._runs = 0
+        self._prev = None
+        self._total_bits = 0
+        self._ones = 0
+
+        min_bits = int(params.get('min_bits', 20))
+        if total_bits < min_bits:
+            return TestResult(
+                test_name="runs",
+                passed=True,
+                p_value=1.0,
+                category="statistical",
+                p_values={"runs": 1.0},
+                metrics={"ones": ones, "zeros": zeros, "runs": 0, "total_bits": total_bits},
+            )
+
+        n = total_bits
+        n1 = ones
+        n2 = zeros
+
+        expected_runs = (2.0 * n1 * n2) / n + 1.0
+        denom = (n * n * (n - 1)) if n > 1 else 1.0
+        variance = (2.0 * n1 * n2 * (2.0 * n1 * n2 - n)) / denom if n > 1 else 0.0
+
+        if variance <= 0.0:
+            p_value = 1.0
+            z_score = 0.0
+        else:
+            z_score = (runs - expected_runs) / math.sqrt(variance)
+            abs_z = abs(z_score)
+            p_value = 2.0 * (1.0 - self._normal_cdf(abs_z))
+
+        passed = p_value > float(params.get('alpha', 0.01))
+
+        return TestResult(
+            test_name="runs",
+            passed=passed,
+            p_value=p_value,
+            category="statistical",
             p_values={"runs": p_value},
             metrics={"ones": ones, "zeros": zeros, "runs": runs, "total_bits": total_bits},
             z_score=z_score

@@ -9,6 +9,15 @@ class CumulativeSumsTest(TestPlugin):
 
     requires = ['bits']
 
+    def __init__(self):
+        # Streaming state: do not buffer entire input
+        self._n = 0
+        self._total = 0  # total sum of +/-1
+        self._cum = 0    # current cumulative sum
+        # Include S_0 = 0 in prefix min/max so backward computation can use S_{k-1}
+        self._prefix_min = 0
+        self._prefix_max = 0
+
     def describe(self) -> str:
         return "Cumulative sums (Cusum) test for binary sequences"
 
@@ -16,7 +25,6 @@ class CumulativeSumsTest(TestPlugin):
         bits = data.bit_view()
         n = len(bits)
 
-        # Minimum data size (NIST recommends reasonably large n; default 100)
         min_bits = int(params.get('min_bits', 100))
         if n < min_bits:
             return TestResult(
@@ -27,20 +35,22 @@ class CumulativeSumsTest(TestPlugin):
                 metrics={"total_bits": n, "reason": "insufficient_bits"},
             )
 
-        def _max_abs_cumulative(seq):
-            cum = 0
-            max_abs = 0
-            for b in seq:
-                x = 1 if b else -1
-                cum += x
-                if abs(cum) > max_abs:
-                    max_abs = abs(cum)
-            return max_abs
+        # compute prefix stats without modifying streaming state
+        cum = 0
+        prefix_min = 0
+        prefix_max = 0
+        total = 0
+        for b in bits:
+            x = 1 if b else -1
+            total += x
+            cum += x
+            if cum < prefix_min:
+                prefix_min = cum
+            if cum > prefix_max:
+                prefix_max = cum
 
-        # forward direction
-        max_abs_fwd = _max_abs_cumulative(bits)
-        # backward direction (sequence reversed)
-        max_abs_bwd = _max_abs_cumulative(reversed(bits))
+        max_abs_fwd = max(abs(prefix_min), abs(prefix_max))
+        max_abs_bwd = max(abs(total - prefix_min), abs(total - prefix_max))
 
         denom = math.sqrt(n) if n > 0 else 1.0
         z_fwd = (max_abs_fwd / denom)
@@ -49,9 +59,7 @@ class CumulativeSumsTest(TestPlugin):
         p_fwd = 2.0 * (1.0 - self._normal_cdf(z_fwd))
         p_bwd = 2.0 * (1.0 - self._normal_cdf(z_bwd))
 
-        # overall p-value is the minimum of the two directions (NIST-style two-sided handling)
         p_overall = min(p_fwd, p_bwd)
-
         passed = p_overall > float(params.get("alpha", 0.01))
 
         return TestResult(
@@ -69,6 +77,79 @@ class CumulativeSumsTest(TestPlugin):
                 "total_bits": n
             }
         )
+
+    def update(self, chunk: bytes, params: dict) -> None:
+        if not chunk:
+            return
+        bv = BytesView(chunk)
+        bits = bv.bit_view()
+        for b in bits:
+            x = 1 if b else -1
+            self._n += 1
+            self._total += x
+            self._cum += x
+            if self._cum < self._prefix_min:
+                self._prefix_min = self._cum
+            if self._cum > self._prefix_max:
+                self._prefix_max = self._cum
+
+    def finalize(self, params: dict) -> TestResult:
+        try:
+            n = self._n
+            if n == 0:
+                return TestResult(
+                    test_name="cusum",
+                    passed=True,
+                    p_value=1.0,
+                    p_values={"cusum_forward": 1.0, "cusum_backward": 1.0, "cusum": 1.0},
+                    metrics={"total_bits": 0, "reason": "no_data"},
+                )
+
+            min_bits = int(params.get('min_bits', 100))
+            if n < min_bits:
+                return TestResult(
+                    test_name="cusum",
+                    passed=True,
+                    p_value=1.0,
+                    p_values={"cusum_forward": 1.0, "cusum_backward": 1.0, "cusum": 1.0},
+                    metrics={"total_bits": n, "reason": "insufficient_bits"},
+                )
+
+            max_abs_fwd = max(abs(self._prefix_min), abs(self._prefix_max))
+            max_abs_bwd = max(abs(self._total - self._prefix_min), abs(self._total - self._prefix_max))
+
+            denom = math.sqrt(n) if n > 0 else 1.0
+            z_fwd = (max_abs_fwd / denom)
+            z_bwd = (max_abs_bwd / denom)
+
+            p_fwd = 2.0 * (1.0 - self._normal_cdf(z_fwd))
+            p_bwd = 2.0 * (1.0 - self._normal_cdf(z_bwd))
+
+            p_overall = min(p_fwd, p_bwd)
+            passed = p_overall > float(params.get("alpha", 0.01))
+
+            return TestResult(
+                test_name="cusum",
+                passed=passed,
+                p_value=p_overall,
+                p_values={
+                    "cusum_forward": p_fwd,
+                    "cusum_backward": p_bwd,
+                    "cusum": p_overall
+                },
+                metrics={
+                    "max_cumulative_sum_forward": max_abs_fwd,
+                    "max_cumulative_sum_backward": max_abs_bwd,
+                    "total_bits": n
+                }
+            )
+        finally:
+            # reset state for reuse
+            self._n = 0
+            self._total = 0
+            self._cum = 0
+            self._prefix_min = 0
+            self._prefix_max = 0
 
     def _normal_cdf(self, x: float) -> float:
         """Approximation of standard normal CDF (Abramowitz-Stegun)."""

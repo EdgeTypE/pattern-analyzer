@@ -170,14 +170,100 @@ Minimum veri uzunlukları (özet)
   - Çoğu NIST testi için n ≥ 100–200 önerilir; m-gram bazlı testlerde \(n \gg 2^m\) gereklidir.
 
 Örnek veri seti ve çıktı notları
-- Monobit küçük örnek:
-  - Girdi (bits): 10110010... (n=100), ones_count=52
-  - TestResult.metrics → {"ones_count":52,"total_bits":100}, z_score, p_value ≈ 0.68
-- Block Frequency örnek:
-  - block_size=8, n=800 → block_count=100, hesaplanan chi^2 ve p döndürülür.
-- Autocorrelation örnek:
-  - metrics.autocorr → [1.0, 0.02, -0.01, ...], lags → [0,1,2,...]
-- Genel: TestResult yapısı tüm testler için tutarlıdır: test_name, passed, p_value (veya None), p_values (per-test), metrics, opsiyonel z_score.
+
+Aşağıdaki örnekler hem hesaplama adımlarını hem de eklentinin döndürebileceği örnek TestResult JSON'larını gösterir.
+
+Monobit örneği (adım adım)
+- Girdi: n = 100 bit, ones_count S = 52
+- Hesaplama:
+  - $$z = \frac{2S - n}{\sqrt{n}} = \frac{104 - 100}{10} = 0.4$$
+  - İki taraflı p değeri (yaklaşık): $$p \approx \operatorname{erfc}\!\left(\frac{|z|}{\sqrt{2}}\right) \approx 0.688$$
+- Örnek TestResult (JSON):
+```json
+{
+  "test_name": "monobit",
+  "passed": true,
+  "p_value": 0.688,
+  "p_values": {"overall": 0.688},
+  "metrics": {"ones_count": 52, "total_bits": 100},
+  "z_score": 0.4
+}
+```
+
+Block Frequency (M = 8) — örnek
+- Girdi: n = 800, M = 8 → N = floor(800/8) = 100 blok
+- Her blok için oranlar \(p_i = \text{ones}_i / M\) hesaplanır.
+- Test istatistiği:
+  - $$\chi^2 = 4M \sum_{i=1}^{N} (p_i - 1/2)^2$$
+- p değeri SciPy varken: `scipy.stats.chi2.sf(chi2, df=N)` kullanılır; yoksa proje içi fallback yöntemleri uygulanır.
+- Örnek TestResult (basit gösterim):
+```json
+{
+  "test_name": "block_frequency",
+  "passed": true,
+  "p_value": 0.42,
+  "metrics": {"block_size": 8, "block_count": 100, "chi2": 83.4}
+}
+```
+
+Runs Test örneği
+- Örnek bit dizisi: 1110010110... ile n1 = 55 (ones), n2 = 45 (zeros), toplam n = 100
+- Hesaplama:
+  - Beklenen runs: $$E(R) = \frac{2 n_1 n_2}{n} + 1$$
+  - Varyans ve z:
+    $$\operatorname{Var}(R)=\frac{2 n_1 n_2 (2 n_1 n_2 - n)}{n^2 (n - 1)}$$
+    $$z = \frac{R - E(R)}{\sqrt{\operatorname{Var}(R)}}$$
+- Örnek TestResult:
+```json
+{
+  "test_name": "runs",
+  "passed": false,
+  "p_value": 0.023,
+  "metrics": {"ones": 55, "zeros": 45, "runs": 40},
+  "z_score": -2.01
+}
+```
+
+Serial Test (m-gram) — özet senaryo
+- Parametre: max_m = 3
+- Her m için m-gram frekanslarından chi-square benzeri istatistikler hesaplanır; en küçük p overall olarak raporlanır.
+- Örnek snippet:
+```json
+{
+  "test_name": "serial",
+  "passed": true,
+  "p_values": {"m=1": 0.55, "m=2": 0.12, "m=3": 0.34},
+  "metrics": {"max_m": 3}
+}
+```
+
+Cusum (Cumulative Sums) örneği
+- Girdi: n = 1000 bit, +1/−1 dönüşümü sonrası kümülatif toplam maksimumu \(S_{\max} = 48\)
+- Kod p değeri hesaplar (NIST'e benzer approximations) — örnek TestResult:
+```json
+{
+  "test_name": "cusum",
+  "passed": true,
+  "p_value": 0.12,
+  "metrics": {"S_max": 48, "total_bits": 1000}
+}
+```
+
+Autocorrelation (diagnostic)
+- Çıktı: otokorelasyon dizisi ve kullanılan lag aralığı. Örnek:
+```json
+{
+  "test_name": "autocorrelation",
+  "passed": false,
+  "p_value": null,
+  "metrics": {"autocorr": [1.0, 0.02, -0.01], "lags": [0,1,2], "n": 512}
+}
+```
+Not: diagnostic testler genelde p_value üretmez; `p_value` alanı `null` veya yok olabilir.
+
+Genel notlar ve kullanım
+- Tüm testler için dönen şema tutarlıdır: `test_name`, `passed`, `p_value` (veya null), `p_values`, `metrics`, opsiyonel `z_score`.
+- Belirli bir testin tam çıktı yapısını görmek için ilgili eklenti kaynağına bakın: [`patternlab/plugins/`](patternlab/plugins/:1).
 
 Kaynaklar ve ileri okuma
 - NIST SP 800‑22 “A Statistical Test Suite for Random and Pseudorandom Number Generators for Cryptographic Applications” — temel referans ve test açıklamaları.

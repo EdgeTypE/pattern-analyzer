@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PatternLab Report</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-2Q2sQ4q9k0sV6zq8bVh0KZ0O1V6aFQz3k1y4D5s9g7m" crossorigin="anonymous">
+  <!-- DataTables -->
+  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <style>
+    :root{
+      --card-bg: #ffffff;
+      --muted: #6c757d;
+    }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f8f9fa; color:#212529; padding:18px; }
+    header .brand { font-weight:600; font-size:1.25rem; }
+    .card { border-radius:0.75rem; box-shadow:0 2px 8px rgba(16,24,40,0.04); }
+    .score-metric { font-size:1.25rem; font-weight:700; }
+    .small-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:0.9rem; background:#f1f3f5; padding:6px 8px; border-radius:6px; display:inline-block; }
+    .chart-wrap { height:220px; }
+    .result-visual img { max-width:100%; height:auto; display:block; border-radius:6px; }
+    pre.json { background:#0f172a10; padding:12px; border-radius:6px; overflow:auto; }
+    .badge-failed { background:#ffe6e6; color:#7a0b0b; font-weight:600; border-radius:.5rem; padding:.35rem .6rem; }
+    @media (max-width:576px){
+      .chart-wrap { height:180px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-4">
+      <div>
+        <div class="brand">PatternLab Report</div>
+        <div class="text-muted small">Python: <span class="small-mono">{{ meta.get("python") or "n/a" }}</span></div>
+      </div>
+      <div class="text-end mt-3 mt-md-0">
+        <div class="text-muted small">Generated: <span class="small-mono">{{ meta.get("generated_at") or "" }}</span></div>
+      </div>
+    </header>
+
+    <section class="card p-3 mb-4">
+      <h5 class="mb-2">Meta</h5>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <tbody>
+            {% for k, v in meta.items() %}
+            <tr><th class="w-25">{{ k }}</th><td><pre class="json" style="margin:0">{{ v | tojson }}</pre></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="row g-3 mb-4">
+      <div class="col-12 col-lg-6">
+        <div class="card p-3 h-100">
+          <h5>Scorecard</h5>
+          <div class="row">
+            {% for k, v in scorecard.items() %}
+            <div class="col-6 col-sm-4 mb-2">
+              <div class="text-muted small">{{ k }}</div>
+              <div class="score-metric">{{ v | tojson }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card p-3 h-100">
+          <h5>P-value histogram</h5>
+          <div class="chart-wrap">
+            <canvas id="pvalChart" style="width:100%; height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card p-3 mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="mb-0">Results</h5>
+        <div class="text-muted small">Interactive table: sort and filter</div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="resultsTable" class="table table-striped table-hover" style="width:100%">
+          <thead>
+            <tr>
+              <th>Test name</th>
+              <th>Status</th>
+              <th>FDR</th>
+              <th>P-value</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {# Render results rows with interactive help icon, data attributes for filtering and plugin descriptions #}
+            {% for result in results %}
+            {# determine p-value bucket for histogram linking #}
+            {% set p = result.p_value if result.p_value is defined else None %}
+            {% if p is not none %}
+              {% if p < 0.01 %}
+                {% set p_bin = "0-0.01" %}
+              {% elif p < 0.05 %}
+                {% set p_bin = "0.01-0.05" %}
+              {% elif p < 0.1 %}
+                {% set p_bin = "0.05-0.1" %}
+              {% else %}
+                {% set p_bin = "0.1-1.0" %}
+              {% endif %}
+            {% else %}
+              {% set p_bin = "" %}
+            {% endif %}
+            <tr data-p-bin="{{ p_bin }}">
+              <td>
+                <span>{{ result.test_name }}</span>
+                <!-- help icon that ties to descriptions; data-test attribute required by tests -->
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary ms-2 plugin-help"
+                  data-plugin-key="{{ result.test_name }}"
+                  data-test="plugin-desc-{{ result.test_name }}"
+                  aria-label="help for {{ result.test_name }}"
+                >?</button>
+              </td>
+              <td><span class="badge bg-light text-dark">{{ result.status }}</span></td>
+              <td>
+                {% if result.fdr_rejected %}
+                  <div class="text-center p-2" style="background:#ffe6e6;color:#7a0b0b;border-radius:.5rem;font-weight:700">
+                    {{ result.fdr_rejected and "Rejected" or "Rejected" }}
+                  </div>
+                {% else %}
+                  <span class="badge bg-success text-white">OK</span>
+                {% endif %}
+              </td>
+              <td>{{ result.p_value if result.p_value is defined else "" }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}" aria-expanded="false" aria-controls="details-{{ loop.index }}">Show</button>
+              </td>
+            </tr>
+            <tr class="collapse-row">
+              <td colspan="5" class="p-0">
+                <div class="collapse" id="details-{{ loop.index }}">
+                  <div class="p-3 border-top">
+                    <div class="row">
+                      <div class="col-12 col-md-6">
+                        <h6 class="mb-2">Metrics</h6>
+                        <pre class="json" style="margin:0">{{ result._lite_metrics | tojson(indent=2) }}</pre>
+                      </div>
+                      <div class="col-12 col-md-6">
+                        {% if result._sparkline_svg %}
+                        <h6>Sparkline</h6>
+                        <div class="mb-2">{{ result._sparkline_svg | safe }}</div>
+                        {% endif %}
+                        {% if result.visuals %}
+                        <h6 class="mt-2">Visuals</h6>
+                          {% for vname, v in result.visuals.items() %}
+                          <div class="mb-2">
+                            <div class="text-muted small">{{ vname }}</div>
+                            {% if v.data_base64 %}
+                            <img class="result-visual" alt="{{ vname }}" src="data:{{ v.mime }};base64,{{ v.data_base64 }}" />
+                            {% elif v.path %}
+                            <img class="result-visual" alt="{{ vname }}" src="{{ v.path }}" />
+                            {% endif %}
+                          </div>
+                          {% endfor %}
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-3gJwYp2k6u9c2Y5nYq3X8bK5jv1Yj2Kp2t9Qjv6v+8w=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-abc" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+  <!-- Embedded JSON data for client-side charts and plugin descriptions -->
+  <script id="pHistData" type="application/json">{{ p_hist_series | tojson | safe }}</script>
+  <script id="pluginDescriptions" type="application/json">{{ descriptions | tojson | safe }}</script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // DataTables init
+      try {
+        $('#resultsTable').DataTable({
+          paging: true,
+          searching: true,
+          info: false,
+          lengthChange: false,
+          pageLength: 10,
+          columnDefs: [
+            { orderable: false, targets: 4 }
+          ]
+        });
+      } catch (e) {
+        console.warn('DataTables init failed', e);
+      }
+  
+      // Initialize help popovers using descriptions injected by the engine
+      try {
+        const descEl = document.getElementById('pluginDescriptions');
+        const descriptions = descEl ? JSON.parse(descEl.textContent) : {};
+        document.querySelectorAll('.plugin-help').forEach(function(btn){
+          try {
+            const key = btn.getAttribute('data-plugin-key');
+            const d = descriptions[key] || { title: key, short: 'No description available', remediation: '' };
+            const content = '<div class="small"><div>' + (d.short ? d.short : '') + '</div>' +
+                            (d.remediation ? '<div class="mt-2"><strong>Remediation:</strong> ' + d.remediation + '</div>' : '') +
+                            '</div>';
+            // Use Bootstrap Popover (hover + focus to support keyboard)
+            new bootstrap.Popover(btn, { title: d.title || key, content: content, html: true, trigger: 'hover focus', placement: 'auto' });
+          } catch (e) {
+            // per-button errors should not break initialization
+            console.warn('plugin-help init failed for', btn, e);
+          }
+        });
+      } catch (e) {
+        console.warn('Popover init failed', e);
+      }
+  
+      // Chart.js p-value histogram with interactive filtering by p-value bin
+      try {
+        const pHistEl = document.getElementById('pHistData');
+        const pHist = pHistEl ? JSON.parse(pHistEl.textContent) : [];
+        // Use human-readable bin labels that match data-p-bin on rows
+        const labels = ['0-0.01','0.01-0.05','0.05-0.1','0.1-1.0'];
+        const ctx = document.getElementById('pvalChart').getContext('2d');
+        const pChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'P-value distribution',
+              data: pHist,
+              backgroundColor: '#0d6efd',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true, ticks: { precision:0 } }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+  
+        // Helper: filter table rows by p-bin; hides both summary row and its collapse row
+        function filterTableByBin(bin) {
+          // show all when bin is falsy
+          if (!bin) {
+            $('tr[data-p-bin]').show();
+            $('.collapse-row').show();
+            return;
+          }
+          $('tr[data-p-bin]').each(function(){
+            const rbin = $(this).attr('data-p-bin') || '';
+            if (rbin === bin) {
+              $(this).show();
+              // show its following collapse-row if present
+              const next = $(this).next('.collapse-row');
+              if (next.length) next.show();
+            } else {
+              $(this).hide();
+              const next = $(this).next('.collapse-row');
+              if (next.length) next.hide();
+            }
+          });
+        }
+  
+        // Chart click handler: map clicked bar to bin and filter table
+        document.getElementById('pvalChart').addEventListener('click', function(evt){
+          try {
+            const elements = pChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            if (elements && elements.length) {
+              const idx = elements[0].index;
+              const bin = pChart.data.labels[idx];
+              filterTableByBin(bin);
+            }
+          } catch (e) {
+            console.warn('Histogram click handling failed', e);
+          }
+        });
+      } catch (e) {
+        console.warn('Chart render failed', e);
+      }
+    });
+  </script>
+</body>
+</html>

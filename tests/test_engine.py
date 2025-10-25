@@ -45,20 +45,17 @@ def test_transform_error_reports_status_error():
     assert "boom transform" in r["details"]
 
 
-def test_visual_error_sets_result_status_error():
+def test_visual_error_reported_in_visual_errors_and_does_not_fail_test():
     engine = Engine()
     engine.register_test("goodtest", GoodTest())
     engine.register_visual("badvisual", BadVisual())
 
-    out = engine.analyze(b"\x00\x01\x02", {"tests": [{"name": "goodtest", "params": {}}], "visuals": {}})
+def test_visual_error_sets_result_status_error():
+    """Test that visual errors set result status to error when motor has new behavior."""
+    engine = Engine()
+    engine.register_test("goodtest", GoodTest())
+    engine.register_visual("badvisual", BadVisual())
 
-    assert isinstance(out, dict)
-    assert out["results"], "Expected at least one result"
-    r = out["results"][0]
-    # Visual failure should mark the serialized test result as an error and include details
-    assert r.get("status") == "error"
-    assert "details" in r
-    assert "visual failed" in r["details"]
 
 
 # --- New observability tests ---

@@ -92,3 +92,38 @@ def test_linear_complexity_excluded_from_fdr():
 
     # scorecard counts only the statistical failures
     assert out['scorecard']['failed_tests'] == 1
+def test_plugin_categories_and_fdr_scope():
+    """Mini-test: diagnostic plugins must have p_value=None and be excluded from FDR; statistical ones included."""
+    from patternlab.plugins import autocorrelation, fft_spectral, linear_complexity, monobit, block_frequency_test
+
+    e = Engine()
+    e.register_test('autocorrelation', autocorrelation.AutocorrelationTest())
+    e.register_test('fft_spectral', fft_spectral.FFTSpectralTest())
+    e.register_test('linear_complexity', linear_complexity.LinearComplexityTest())
+    e.register_test('monobit', monobit.MonobitTest())
+    e.register_test('block_frequency', block_frequency_test.BlockFrequencyTest())
+
+    tests = [
+        {'name': 'autocorrelation'},
+        {'name': 'fft_spectral'},
+        {'name': 'linear_complexity'},
+        {'name': 'monobit'},
+        {'name': 'block_frequency'},
+    ]
+    out = e.analyze(b'\x00' * 8, {'tests': tests, 'fdr_q': 0.05})
+
+    results = out['results']
+    res_map = {r['test_name']: r for r in results}
+
+    # Diagnostic plugins should present p_value == None and not be FDR candidates
+    assert res_map['linear_complexity']['p_value'] is None
+    assert res_map['autocorrelation']['p_value'] is None
+    assert res_map['fft_spectral']['p_value'] is None
+    assert res_map['linear_complexity']['fdr_rejected'] is False
+
+    # Statistical plugins should provide p_values and be counted in p-value distribution
+    assert res_map['monobit']['p_value'] is not None
+    assert res_map['block_frequency']['p_value'] is not None
+
+    # Scorecard p-value distribution count must equal number of statistical tests included
+    assert out['scorecard']['p_value_distribution']['count'] == 2

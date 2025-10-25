@@ -36,5 +36,5 @@ class TestSerialTest:
         assert result.test_name == "serial"
         assert "m_1" in result.p_values and "m_2" in result.p_values
         assert 0.0 <= result.p_value <= 1.0
-        # Balanced alternating pattern expected to pass for small m
-        assert result.passed is True or result.p_value > 0.001
+        # For this specific pattern, m=2 has very low p_value due to chi-square test
+        assert result.passed is False

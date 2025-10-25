@@ -97,3 +97,63 @@ Ek referans
 - CLI: [`patternlab/cli.py`](patternlab/cli.py:1)
 
 Bu kılavuz, hızlı bir başlangıç sağlar. İleri seviye konu veya örnek isterseniz ayrı bir doküman eklenebilir.
+
+## Örnek: Tam Bir Test Eklentisi
+
+Aşağıda proje içinde doğrudan kullanılabilecek minimal, test edilebilir bir TestPlugin örneği bulunmaktadır. Bu dosyayı [`patternlab/plugins/my_test.py`](patternlab/plugins/my_test.py:1) olarak ekleyebilirsiniz.
+
+```python
+# python
+from patternlab.plugin_api import TestPlugin, BytesView, TestResult
+
+class MyThresholdTest(TestPlugin):
+    """Basit eşik tabanlı monobit benzeri test örneği."""
+
+    requires = ["bits"]
+
+    def describe(self) -> str:
+        return "my_threshold_test"
+
+    def run(self, data: BytesView, params: dict) -> TestResult:
+        bits = data.bit_view()
+        ones = sum(bits)
+        n = len(bits)
+        threshold = float(params.get("threshold", 0.5))
+        passed = True if n == 0 else (ones / n) > threshold
+        metrics = {"ones": ones, "total_bits": n, "threshold": threshold}
+        return TestResult(test_name=self.describe(), passed=passed, p_value=None, metrics=metrics)
+```
+
+## Örnek Unit Test
+
+Eklentinizi doğrulamak için pytest ile basit bir test yazın. Aşağıdaki örnek dosyayı [`tests/test_my_threshold.py`](tests/test_my_threshold.py:1) olarak oluşturabilirsiniz.
+
+```python
+# python
+from patternlab.plugins.my_test import MyThresholdTest
+from patternlab.plugin_api import BytesView
+
+def test_my_threshold_pass():
+    plugin = MyThresholdTest()
+    # örnek bit dizisi: 6 bit, 5 tane 1 -> oran 0.833
+    data = BytesView(b'\xf8')  # 11111000 (örnek)
+    result = plugin.run(data, {"threshold": 0.7})
+    assert result.passed is True
+    assert result.metrics["ones"] >= 5
+
+def test_my_threshold_fail():
+    plugin = MyThresholdTest()
+    data = BytesView(b'\x0f')  # 00001111 (oran 0.5)
+    result = plugin.run(data, {"threshold": 0.6})
+    assert result.passed is False
+```
+
+## Test ve CI Entegrasyonu
+
+- Yeni eklentiyi ekledikten sonra `pytest` ile testleri çalıştırın.
+- Eklentinin bağımlılıkları varsa bunları `pyproject.toml` veya `docs/requirements.txt` içine ekleyin.
+- Otomatik test çalıştırma için GitHub Actions iş akışlarına test adımı ekleyin (ör: `pytest` çağrısı).
+
+Ek referansler:
+- Eklenti API detayları: [`patternlab/plugin_api.py`](patternlab/plugin_api.py:1)
+- Mevcut eklenti örnekleri: [`patternlab/plugins/monobit.py`](patternlab/plugins/monobit.py:1)

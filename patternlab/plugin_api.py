@@ -168,20 +168,40 @@ class TestPlugin(BasePlugin):
     def run(self, data: BytesView, params: Dict[str, Any]) -> TestResult:
         """Run statistical test."""
         pass
-
+ 
     def safe_run(self, data: BytesView, params: Dict[str, Any]):
         """Execute the test and convert unexpected exceptions into a structured error dict.
-
+ 
         Returns:
             TestResult when the test completes successfully, or
             dict with keys {"test_name": ..., "status": "error", "reason": "..."} when an exception occurs.
-
+ 
         Note: engine may inject the configured test name into the returned dict if needed.
         """
         try:
             return self.run(data, params)
         except Exception as e:
             return {"status": "error", "reason": str(e)}
+ 
+    # Streaming API: plugins that support single-pass streaming should implement these methods.
+    # Default implementations raise NotImplementedError so the engine can detect unsupported tests
+    # and mark them as skipped in streaming mode.
+    def update(self, chunk: bytes, params: Dict[str, Any]) -> None:
+        """Handle a chunk of raw bytes during streaming analysis.
+ 
+        Implementations should be prepared to receive multiple update() calls before finalize().
+        The default implementation raises NotImplementedError to indicate streaming is not supported.
+        """
+        raise NotImplementedError("Streaming 'update' not implemented for this TestPlugin")
+ 
+    def finalize(self, params: Dict[str, Any]) -> TestResult:
+        """Finalize streaming aggregation and return a TestResult.
+ 
+        Called after all chunks have been provided via update(). Implementations that support
+        streaming must return a valid TestResult from this method. Default raises
+        NotImplementedError to indicate streaming is not supported.
+        """
+        raise NotImplementedError("Streaming 'finalize' not implemented for this TestPlugin")
 
 
 class VisualPlugin(BasePlugin):
