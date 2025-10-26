@@ -1,190 +1,148 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>PatternLab Report</title>
+  <title>PatternLab Analiz Raporu</title>
 
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-2Q2sQ4q9k0sV6zq8bVh0KZ0O1V6aFQz3k1y4D5s9g7m" crossorigin="anonymous">
-  <!-- DataTables -->
-  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <!-- Bootstrap 5 ve Simgeler -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
   <style>
-    :root{
-      --card-bg: #ffffff;
-      --muted: #6c757d;
-    }
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f8f9fa; color:#212529; padding:18px; }
-    header .brand { font-weight:600; font-size:1.25rem; }
-    .card { border-radius:0.75rem; box-shadow:0 2px 8px rgba(16,24,40,0.04); }
-    .score-metric { font-size:1.25rem; font-weight:700; }
-    .small-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:0.9rem; background:#f1f3f5; padding:6px 8px; border-radius:6px; display:inline-block; }
-    .chart-wrap { height:220px; }
-    .result-visual img { max-width:100%; height:auto; display:block; border-radius:6px; }
-    pre.json { background:#0f172a10; padding:12px; border-radius:6px; overflow:auto; }
-    .badge-failed { background:#ffe6e6; color:#7a0b0b; font-weight:600; border-radius:.5rem; padding:.35rem .6rem; }
-    @media (max-width:576px){
-      .chart-wrap { height:180px; }
-    }
+    :root { --bs-body-font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background-color: #f8f9fa; }
+    .card { box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: none; }
+    .score-metric { font-size: 1.5rem; font-weight: 700; }
+    .small-mono { font-family: 'Fira Code', 'Roboto Mono', monospace; background-color: #e9ecef; padding: .2em .4em; border-radius: 4px; }
+    .help-icon { cursor: pointer; color: #6c757d; transition: color 0.2s; }
+    .help-icon:hover { color: #0d6efd; }
+    .table-hover tbody tr:hover { background-color: rgba(0,0,0,0.04); }
+    .badge.bg-success-subtle { color: #0a3622 !important; border: 1px solid #a3cfbb; }
+    .badge.bg-danger-subtle { color: #58151c !important; border: 1px solid #f1b4b9; }
+    .badge.bg-secondary-subtle { color: #212529 !important; border: 1px solid #d3d6d9; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-4">
-      <div>
-        <div class="brand">PatternLab Report</div>
-        <div class="text-muted small">Python: <span class="small-mono">{{ meta.get("python") or "n/a" }}</span></div>
-      </div>
-      <div class="text-end mt-3 mt-md-0">
-        <div class="text-muted small">Generated: <span class="small-mono">{{ meta.get("generated_at") or "" }}</span></div>
-      </div>
+  <div class="container py-4">
+    <header class="pb-3 mb-4 border-bottom">
+      <h1 class="h3">PatternLab Analiz Raporu</h1>
+      <p class="text-muted mb-0">Oluşturma Zamanı: <span class="small-mono">{{ meta.get("generated_at", "N/A") }}</span></p>
     </header>
 
-    <section class="card p-3 mb-4">
-      <h5 class="mb-2">Meta</h5>
-      <div class="table-responsive">
-        <table class="table table-sm">
-          <tbody>
-            {% for k, v in meta.items() %}
-            <tr><th class="w-25">{{ k }}</th><td><pre class="json" style="margin:0">{{ v | tojson }}</pre></td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <section id="analysis-summary" class="card p-3 mb-4">
+        <h5 class="card-title">Analiz Özeti</h5>
+        {% set failed_count = scorecard.get("failed_tests", 0) %}
+        {% if failed_count > 0 %}
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Potansiyel Anormallikler Tespit Edildi!</h4>
+                <p>Toplam <strong>{{ scorecard.get("total_tests", 0) }}</strong> testten <strong>{{ failed_count }}</strong> tanesi istatistiksel olarak anlamlı sapmalar gösterdi (FDR q={{ scorecard.get("fdr_q") }}). Bu durum, incelenen verinin tamamen rastgele olmayabileceğine işaret ediyor.</p>
+                <hr>
+                <p class="mb-1"><strong>Başarısız Olan Testler:</strong></p>
+                <ul>
+                    {% for result in results %}
+                        {% if result.fdr_rejected %}
+                            <li><strong>{{ result.test_name }}</strong>: Bu testin başarısız olması, genellikle verideki belirli bir yapıya işaret eder. Detaylı bilgi için tablodaki <i class="bi bi-question-circle-fill help-icon" data-plugin-key="{{ result.test_name }}"></i> ikonuna tıklayın.</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% else %}
+            <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Anormallik Tespit Edilmedi</h4>
+                <p>Çalıştırılan <strong>{{ scorecard.get("total_tests", 0) }}</strong> testin hiçbiri, belirlenen anlamlılık düzeyinde istatistiksel bir anormallik göstermedi. Veri, bu testler kapsamında rastgele bir yapı sergilemektedir.</p>
+            </div>
+        {% endif %}
     </section>
 
-    <section class="row g-3 mb-4">
+    <section class="row g-4 mb-4">
       <div class="col-12 col-lg-6">
         <div class="card p-3 h-100">
-          <h5>Scorecard</h5>
-          <div class="d-flex align-items-center flex-wrap">
-            <div class="me-4 text-center">
-              <div class="text-muted small">Failed tests</div>
-              <div class="score-metric" style="color:#d9534f">{{ scorecard.get("failed_tests", 0) }}</div>
+          <h5 class="card-title">Scorecard</h5>
+          <div class="d-flex align-items-center justify-content-around flex-wrap text-center">
+            <div class="p-2">
+              <div class="text-muted small">BAŞARISIZ TESTLER</div>
+              <div class="score-metric text-danger">{{ scorecard.get("failed_tests", 0) }}</div>
             </div>
-            <div class="me-4 text-center">
-              <div class="text-muted small">Total tests</div>
+            <div class="p-2">
+              <div class="text-muted small">TOPLAM TEST</div>
               <div class="score-metric">{{ scorecard.get("total_tests", 0) }}</div>
             </div>
-            <div class="me-4 text-center">
-              <div class="text-muted small">Mean effect size</div>
-              <div class="score-metric">{{ scorecard.get("mean_effect_size") | default("n/a") }}</div>
-            </div>
-            <div class="me-4 text-center">
-              <div class="text-muted small">FDR q</div>
+            <div class="p-2">
+              <div class="text-muted small">FDR (q)</div>
               <div class="score-metric">{{ scorecard.get("fdr_q") }}</div>
             </div>
           </div>
-          <hr/>
-          <div>
-            <small class="text-muted">P-value distribution</small>
-            <div class="mt-2">
-              <canvas id="pvalMini" height="60"></canvas>
-            </div>
-          </div>
         </div>
       </div>
-
       <div class="col-12 col-lg-6">
         <div class="card p-3 h-100">
-          <h5>P-value histogram</h5>
-          <div class="chart-wrap">
-            <canvas id="pvalChart" style="width:100%; height:100%;"></canvas>
-          </div>
+          <h5 class="card-title">P-Değeri Dağılımı</h5>
+          <div style="height: 150px;"><canvas id="pvalChart"></canvas></div>
         </div>
       </div>
     </section>
 
     <section class="card p-3 mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <h5 class="mb-0">Results</h5>
-        <div class="text-muted small">Interactive table: sort and filter</div>
-      </div>
-
+      <h5 class="card-title mb-3">Detaylı Test Sonuçları</h5>
       <div class="table-responsive">
-        <table id="resultsTable" class="table table-striped table-hover" style="width:100%">
+        <table id="resultsTable" class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>Test name</th>
-              <th>Status</th>
-              <th>FDR</th>
-              <th>P-value</th>
-              <th>Details</th>
+              <th>Test Adı</th>
+              <th class="text-center">Sonuç</th>
+              <th>P-Değeri</th>
+              <th class="text-center">Detaylar</th>
             </tr>
           </thead>
           <tbody>
-            {# Render results rows with interactive help icon, data attributes for filtering and plugin descriptions #}
             {% for result in results %}
-            {# determine p-value bucket for histogram linking #}
-            {% set p = result.p_value if result.p_value is defined else None %}
-            {% if p is not none %}
-              {% if p < 0.01 %}
-                {% set p_bin = "0-0.01" %}
-              {% elif p < 0.05 %}
-                {% set p_bin = "0.01-0.05" %}
-              {% elif p < 0.1 %}
-                {% set p_bin = "0.05-0.1" %}
-              {% else %}
-                {% set p_bin = "0.1-1.0" %}
-              {% endif %}
-            {% else %}
-              {% set p_bin = "" %}
-            {% endif %}
-            <tr data-p-bin="{{ p_bin }}">
+            <tr>
               <td>
-                <span>{{ result.test_name }}</span>
-                <!-- help icon that ties to descriptions; data-test attribute required by tests -->
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary ms-2 plugin-help"
-                  data-plugin-key="{{ result.test_name }}"
-                  data-test="plugin-desc-{{ result.test_name }}"
-                  aria-label="help for {{ result.test_name }}"
-                >?</button>
+                {{ result.test_name }}
+                <i class="bi bi-question-circle-fill ms-2 help-icon" 
+                   data-plugin-key="{{ result.test_name }}" 
+                   data-bs-target="#details-{{ loop.index }}"
+                   title="Bu testin ne anlama geldiğini öğren"></i>
               </td>
-              <td><span class="badge bg-light text-dark">{{ result.status }}</span></td>
-              <td>
-                {% if result.fdr_rejected %}
-                  <div class="text-center p-2" style="background:#ffe6e6;color:#7a0b0b;border-radius:.5rem;font-weight:700">
-                    {{ result.fdr_rejected and "Rejected" or "Rejected" }}
-                  </div>
+              <td class="text-center">
+                {% if result.status != 'completed' %}
+                    <span class="badge bg-secondary-subtle rounded-pill">{{ result.status | upper }}</span>
+                {% elif result.fdr_rejected %}
+                    <span class="badge bg-danger-subtle rounded-pill">FAIL</span>
                 {% else %}
-                  <span class="badge bg-success text-white">OK</span>
+                    <span class="badge bg-success-subtle rounded-pill">PASS</span>
                 {% endif %}
               </td>
-              <td>{{ result.p_value if result.p_value is defined else "" }}</td>
-              <td>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}" aria-expanded="false" aria-controls="details-{{ loop.index }}">Show</button>
+              <td><span class="small-mono">{{ "%.4g" % result.p_value if result.p_value is not none else "N/A" }}</span></td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}">
+                  <i class="bi bi-arrows-angle-expand"></i> Göster
+                </button>
               </td>
             </tr>
             <tr class="collapse-row">
-              <td colspan="5" class="p-0">
+              <td colspan="4" class="p-0">
                 <div class="collapse" id="details-{{ loop.index }}">
-                  <div class="p-3 border-top">
+                  <div class="p-3 bg-light border-top">
+                    <div class="description-area mb-3 p-3 bg-white rounded border"></div>
                     <div class="row">
-                      <div class="col-12 col-md-6">
-                        <h6 class="mb-2">Metrics</h6>
-                        <pre class="json" style="margin:0">{{ result._lite_metrics | tojson(indent=2) }}</pre>
-                      </div>
-                      <div class="col-12 col-md-6">
-                        {% if result._sparkline_svg %}
-                        <h6>Sparkline</h6>
-                        <div class="mb-2">{{ result._sparkline_svg | safe }}</div>
-                        {% endif %}
-                        {% if result.visuals %}
-                        <h6 class="mt-2">Visuals</h6>
-                          {% for vname, v in result.visuals.items() %}
-                          <div class="mb-2">
-                            <div class="text-muted small">{{ vname }}</div>
-                            {% if v.data_base64 %}
-                            <img class="result-visual" alt="{{ vname }}" src="data:{{ v.mime }};base64,{{ v.data_base64 }}" />
-                            {% elif v.path %}
-                            <img class="result-visual" alt="{{ vname }}" src="{{ v.path }}" />
+                        <div class="col-12 col-md-7">
+                            <h6>Metrikler</h6>
+                            <pre class="small bg-white p-2 rounded border" style="max-height: 300px;">{{ result._lite_metrics | tojson(indent=2) }}</pre>
+                        </div>
+                        <div class="col-12 col-md-5">
+                            {% if result.visuals %}
+                                <h6 class="mt-3 mt-md-0">Görsel</h6>
+                                {% for vname, v in result.visuals.items() %}
+                                    {% if v.data_base64 %}
+                                        <img class="img-fluid rounded border" alt="{{ vname }}" src="data:{{ v.mime }};base64,{{ v.data_base64 }}" />
+                                    {% elif v.path %}
+                                        <img class="img-fluid rounded border" alt="{{ vname }}" src="{{ v.path }}" />
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
-                          </div>
-                          {% endfor %}
-                        {% endif %}
-                      </div>
+                        </div>
                     </div>
                   </div>
                 </div>
@@ -196,157 +154,85 @@
       </div>
     </section>
 
-  </div>
-
-  <!-- Plugin description modal -->
-  <div class="modal fade" id="pluginDescModal" tabindex="-1" aria-labelledby="pluginDescModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="pluginDescModalLabel">Plugin description</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Meta Bilgileri (Açılır-kapanır) -->
+    <div class="accordion" id="metaAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMeta">
+              Çalışma Ortamı ve Meta Verileri
+            </button>
+          </h2>
+          <div id="collapseMeta" class="accordion-collapse collapse">
+            <div class="accordion-body">
+                <div class="table-responsive small">
+                    <table class="table table-sm table-bordered">
+                      {% for k, v in meta.items() %}
+                      <tr>
+                        <th style="width: 20%;">{{ k }}</th>
+                        <td><pre class="small bg-light p-1 rounded mb-0">{{ v | tojson(indent=2) }}</pre></td>
+                      </tr>
+                      {% endfor %}
+                    </table>
+                </div>
+            </div>
+          </div>
         </div>
-        <div class="modal-body">
-          <!-- populated dynamically -->
-        </div>
-      </div>
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-3gJwYp2k6u9c2Y5nYq3X8bK5jv1Yj2Kp2t9Qjv6v+8w=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-abc" crossorigin="anonymous"></script>
+  <!-- Script'ler -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-
-  <!-- Embedded JSON data for client-side charts and plugin descriptions -->
+  
   <script id="pHistData" type="application/json">{{ p_hist_series | tojson | safe }}</script>
   <script id="pluginDescriptions" type="application/json">{{ descriptions | tojson | safe }}</script>
   
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // DataTables init
-      try {
-        $('#resultsTable').DataTable({
-          paging: true,
-          searching: true,
-          info: false,
-          lengthChange: false,
-          pageLength: 10,
-          columnDefs: [
-            { orderable: false, targets: 4 }
-          ]
+      const descriptions = JSON.parse(document.getElementById('pluginDescriptions').textContent);
+      
+      document.querySelectorAll('.help-icon').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.pluginKey;
+          const targetId = btn.dataset.bsTarget;
+          const detailsDiv = document.querySelector(targetId);
+          if (!detailsDiv) return;
+
+          const descriptionArea = detailsDiv.querySelector('.description-area');
+          const d = descriptions[key] || { title: key, short: 'Bu test için bir açıklama bulunamadı.', long: '', remediation: '' };
+          
+          descriptionArea.innerHTML = `
+            <h5 class="mb-2">${d.title}</h5>
+            <p class="mb-2"><strong>Ne Anlama Gelir?</strong> ${d.short}</p>
+            <p class="small text-muted">${d.long || ''}</p>
+            ${d.remediation ? `<p class="small"><strong>Öneri:</strong> ${d.remediation}</p>` : ''}
+          `;
+          
+          // Show the collapse area
+          const collapseInstance = bootstrap.Collapse.getOrCreateInstance(detailsDiv);
+          collapseInstance.show();
         });
-      } catch (e) {
-        console.warn('DataTables init failed', e);
-      }
-  
-      // Initialize help popovers using descriptions injected by the engine
-      try {
-        const descEl = document.getElementById('pluginDescriptions');
-        const descriptions = descEl ? JSON.parse(descEl.textContent) : {};
-        document.querySelectorAll('.plugin-help').forEach(function(btn){
-          try {
-            const key = btn.getAttribute('data-plugin-key');
-            const d = descriptions[key] || { title: key, short: 'No description available', remediation: '' };
-            const content = '<div class="small"><div>' + (d.short ? d.short : '') + '</div>' +
-                            (d.remediation ? '<div class="mt-2"><strong>Remediation:</strong> ' + d.remediation + '</div>' : '') +
-                            '</div>';
-            // Use Bootstrap Popover (hover + focus to support keyboard)
-            new bootstrap.Popover(btn, { title: d.title || key, content: content, html: true, trigger: 'hover focus', placement: 'auto' });
-            // Add click handler to open modal with full description for accessibility/long text
-            btn.addEventListener('click', function(ev){
-              try {
-                const modal = document.getElementById('pluginDescModal');
-                const titleEl = modal.querySelector('.modal-title');
-                const bodyEl = modal.querySelector('.modal-body');
-                titleEl.textContent = d.title || key;
-                bodyEl.innerHTML = '<p>' + (d.short ? d.short : '') + '</p>' + (d.remediation ? '<p><strong>Remediation:</strong> ' + d.remediation + '</p>' : '') + '<pre class="json" style="margin-top:8px">' + JSON.stringify(d, null, 2) + '</pre>';
-                const bsModal = new bootstrap.Modal(modal);
-                bsModal.show();
-              } catch (e) {
-                console.warn('plugin-help modal show failed', e);
-              }
-            });
-          } catch (e) {
-            // per-button errors should not break initialization
-            console.warn('plugin-help init failed for', btn, e);
-          }
-        });
-      } catch (e) {
-        console.warn('Popover init failed', e);
-      }
-  
-      // Chart.js p-value histogram with interactive filtering by p-value bin
-      try {
-        const pHistEl = document.getElementById('pHistData');
-        const pHist = pHistEl ? JSON.parse(pHistEl.textContent) : [];
-        // Use human-readable bin labels that match data-p-bin on rows
-        const labels = ['0-0.01','0.01-0.05','0.05-0.1','0.1-1.0'];
-        const ctx = document.getElementById('pvalChart').getContext('2d');
-        const pChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'P-value distribution',
-              data: pHist,
-              backgroundColor: '#0d6efd',
-              borderRadius: 4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: { beginAtZero: true, ticks: { precision:0 } }
-            },
-            plugins: {
-              legend: { display: false }
-            }
-          }
-        });
-  
-        // Helper: filter table rows by p-bin; hides both summary row and its collapse row
-        function filterTableByBin(bin) {
-          // show all when bin is falsy
-          if (!bin) {
-            $('tr[data-p-bin]').show();
-            $('.collapse-row').show();
-            return;
-          }
-          $('tr[data-p-bin]').each(function(){
-            const rbin = $(this).attr('data-p-bin') || '';
-            if (rbin === bin) {
-              $(this).show();
-              // show its following collapse-row if present
-              const next = $(this).next('.collapse-row');
-              if (next.length) next.show();
-            } else {
-              $(this).hide();
-              const next = $(this).next('.collapse-row');
-              if (next.length) next.hide();
-            }
-          });
+      });
+
+      const pHistData = JSON.parse(document.getElementById('pHistData').textContent);
+      const pvalCtx = document.getElementById('pvalChart').getContext('2d');
+      new Chart(pvalCtx, {
+        type: 'bar',
+        data: {
+          labels: ['< 0.01 (Anlamlı)', '0.01-0.05', '0.05-0.1', '> 0.1 (Anlamsız)'],
+          datasets: [{
+            label: 'P-Değeri Sayısı',
+            data: pHistData,
+            backgroundColor: ['#d9534f', '#f0ad4e', '#5bc0de', '#5cb85c'],
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
-  
-        // Chart click handler: map clicked bar to bin and filter table
-        document.getElementById('pvalChart').addEventListener('click', function(evt){
-          try {
-            const elements = pChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-            if (elements && elements.length) {
-              const idx = elements[0].index;
-              const bin = pChart.data.labels[idx];
-              filterTableByBin(bin);
-            }
-          } catch (e) {
-            console.warn('Histogram click handling failed', e);
-          }
-        });
-      } catch (e) {
-        console.warn('Chart render failed', e);
-      }
+      });
     });
   </script>
 </body>
