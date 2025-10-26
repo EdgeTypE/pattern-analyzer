@@ -111,6 +111,82 @@ Linear Complexity (diagnostic)
   - NIST SP 800‑22'de linear complexity testindeki gibi L için normalize istatistik ve p-değeri hesaplanabilir; kod mevcut haliyle genelde diagnostic sonuç döndürüyor (p_value=1.0 ile uyumluluk amacıyla).
 - SciPy bağımlılığı: yok tipik olarak (algoritma doğrudan bit düzeyinde çalışır).
 
+## Frequency Test within a Block (frequency_within_block.py)
+- Dosya: [`patternlab/plugins/frequency_within_block.py`](patternlab/plugins/frequency_within_block.py:1)  
+- Amaç ve NIST bağlantısı: NIST SP 800‑22'deki "Frequency Test within a Block" yaklaşımına dayanır. Girdi bit dizisini M-boyutlu bloklara ayırıp her bloktaki 1 oranlarının 0.5'ten sapmasını chi-square benzeri bir istatistik ile değerlendirir. Block Frequency ile benzer amaç taşır ancak implementasyon ve parametre seçimi farklılıkları olabilir.
+- Parametreler / varsayılanlar:
+  - `block_size` (int): açıkça verilirse kullanılır (M).
+  - `default_block_size` (int, default 128): `block_size` yoksa kullanılır.
+  - `alpha` (float, default 0.01)
+  - Seçme heuristiği: eğer toplam bit sayısı n % 100 == 0 ise otomatik olarak M = n // 100 seçilebilir.
+- Çıktı metrikleri:
+  - `block_count`, `block_size`, `total_bits`
+  - `ones_counts` (blok başına 1 sayıları), `proportions` (blok başına 1 oranları)
+  - `chi_square`
+- Kullanım örneği:
+```python
+# python
+from patternlab.plugins.frequency_within_block import FrequencyWithinBlockTest
+from patternlab.plugin_api import BytesView
+
+plugin = FrequencyWithinBlockTest()
+res = plugin.run(BytesView(b'\xff\x00\xaa'), {"block_size": 8, "alpha": 0.01})
+print(res.test_name, res.p_value, res.metrics["chi_square"])
+```
+
+## Maurer's Universal Test (maurers_universal.py)
+- Dosya: [`patternlab/plugins/maurers_universal.py`](patternlab/plugins/maurers_universal.py:1)  
+- Amaç ve NIST bağlantısı: NIST SP 800‑22'de tanımlanan Maurer’s Universal Statistical Test ile uyumlu bir uygulamadır. Desen tekrar uzaklıklarının log2 ortalaması üzerinden dizinin sıkılık/karmaşıklık ölçülür.
+- Parametreler / varsayılanlar:
+  - `L` (int, default 6): blok uzunluğu (NIST önerisi 6..16).
+  - `Q` (int, default 10 * 2**L): başlatma (init) blok sayısı.
+  - `min_blocks` (int, default Q + 1000): toplam blok sayısı için minimum gereksinim; eksik ise test "skipped" döner.
+  - `alpha` (float, default 0.01)
+- Önemli davranışlar:
+  - L=6..16 aralığındaki referans ortalama/varyans tablosu kullanılır. Yetersiz veri durumunda `{"status":"skipped", "reason": ...}` döner.
+  - İşlem blokları Q sonrası K = block_count - Q ile hesaplanır; fn = ortalama log2 mesafe, z ve p-value NIST eşdeğer formüllerine göre hesaplanır.
+- Çıktı metrikleri:
+  - `L`, `blocks` (toplam blok), `init_Q`, `processed_blocks` (K), `fn`, `expected`, `variance`, `z_score`, `total_bits`
+- Kullanım örneği:
+```python
+# python
+from patternlab.plugins.maurers_universal import MaurersUniversalTest
+from patternlab.plugin_api import BytesView
+
+plugin = MaurersUniversalTest()
+res = plugin.run(BytesView(open("test.bin","rb").read()), {"L": 6})
+if isinstance(res, dict) and res.get("status") == "skipped":
+    print("Skipped:", res["reason"])
+else:
+    print(res.test_name, res.p_value, res.metrics["fn"])
+```
+
+## Linear Complexity (güncellenmiş)
+- Dosya: [`patternlab/plugins/linear_complexity.py`](patternlab/plugins/linear_complexity.py:1)  
+- Amaç ve NIST bağlantısı: Berlekamp–Massey ile bit dizisinin GF(2) üzerindeki lineer kompleksitesini hesaplar. NIST SP 800‑22'deki linear complexity testine benzer istatistiksel normalize etme ve p-değeri hesaplamaları uygulanır (yaklaşmalar).
+- Parametreler / varsayılanlar:
+  - `alpha` (float, default 0.01)
+  - Girdi uzunluğu n == 0 ise TestResult içinde error bilgisi döner ve passed=False.
+- Hesaplama özeti:
+  - Berlekamp–Massey algoritması ile L hesaplanır.
+  - Yaklaşık beklenen değer mu ve varyans sigma NIST-tarzı formüllerden türetilir:
+    - $$\mu = \frac{n}{2} + \frac{9 + (-1)^{n+1}}{36}$$
+    - $$\sigma \approx \sqrt{\frac{n}{4}}$$
+  - Normalize istatistik: $$T = (-1)^n (L - \mu) + \tfrac{2}{9}$$, $$z = T / \sigma$$
+  - İki taraflı p-değeri SciPy varsa `scipy.stats.norm` ile, yoksa `math.erfc` ile hesaplanır.
+- Çıktı metrikleri:
+  - `linear_complexity` (L), `n`, `mu`, `sigma`, `T`, `z`, `p_value_backend`
+- Kullanım örneği:
+```python
+# python
+from patternlab.plugins.linear_complexity import LinearComplexityTest
+from patternlab.plugin_api import BytesView
+
+plugin = LinearComplexityTest()
+res = plugin.run(BytesView(b'\xff\x00\x0f'), {})
+print(res.metrics["linear_complexity"], res.p_value)
+```
+
 Binary Matrix Rank
 - Dosya: [`patternlab/plugins/binary_matrix_rank.py`](patternlab/plugins/binary_matrix_rank.py:1)
 - Amaç: Bit dizisini m×m matrislere ayırıp GF(2) rank dağılımının beklenen dağılıma göre sapmasını test eder.

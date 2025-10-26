@@ -98,6 +98,85 @@ Ek referans
 
 Bu kılavuz, hızlı bir başlangıç sağlar. İleri seviye konu veya örnek isterseniz ayrı bir doküman eklenebilir.
 
+## Yeni Test Eklentileri: frequency_within_block, maurers_universal, linear_complexity
+
+Aşağıda proje içinde eklenmiş/ güncellenmiş üç test eklentisi için geliştirici notları bulunmaktadır. Her bölümde eklentinin amacı (NIST ile bağlantı), kabul edilen parametreler/varsayılanlar, döndürülen önemli metrikler ve kısa kullanım örneği yer alır.
+
+### Frequency Test within a Block
+- Dosya: [`patternlab/plugins/frequency_within_block.py`](patternlab/plugins/frequency_within_block.py:1)  
+- Amaç ve NIST bağlantısı: NIST SP 800‑22 içindeki "Frequency Test within a Block" yaklaşımına dayanır. Girdi bit dizisini M boyutlu bloklara ayırır ve her bloktaki 1 oranlarının beklenen 0.5 değerinden sapmasını chi-square benzeri bir istatistik ile değerlendirir.
+- Parametreler ve varsayılanlar:
+  - `block_size` (int): açıkça verilirse kullanılır (M).
+  - `default_block_size` (int, default 128): `block_size` verilmediğinde kullanılacak varsayılan.
+  - `alpha` (float, default 0.01): anlamlılık seviyesi.
+  - Seçme heuristiği: Eğer toplam bit sayısı n 100 ile tam bölünürse M = n // 100 seçilebilir.
+- Çıktı metrikleri (TestResult.metrics):
+  - `block_count`, `block_size`, `total_bits`
+  - `ones_counts`: blok başına 1 sayıları
+  - `proportions`: blok başına 1 oranları
+  - `chi_square`
+- Kullanım örneği:
+```python
+# python
+from patternlab.plugins.frequency_within_block import FrequencyWithinBlockTest
+from patternlab.plugin_api import BytesView
+
+plugin = FrequencyWithinBlockTest()
+data = BytesView(b'\xff\x00\xaa')  # örnek
+result = plugin.run(data, {"block_size": 8, "alpha": 0.01})
+print(result.p_value, result.metrics["chi_square"])
+```
+
+### Maurer's Universal Test (güncellenmiş)
+- Dosya: [`patternlab/plugins/maurers_universal.py`](patternlab/plugins/maurers_universal.py:1)  
+- Amaç ve NIST bağlantısı: NIST SP 800‑22'de tanımlanan Maurer’s Universal Statistical Test'e uyumlu bir uygulamadır. Desenlerin tekrar uzaklıklarının log2 ortalaması üzerinden dizinin beklenen sıkılık/karmaşıklığını ölçer.
+- Parametreler ve varsayılanlar:
+  - `L` (int, default 6): blok uzunluğu (NIST önerisi 6..16 arası).
+  - `Q` (int, default 10 * 2**L): başlatma (init) blok sayısı.
+  - `min_blocks` (int): toplam blok sayısı için minimum gereksinim; varsayılan Q + 1000 (NIST gereksinimine uyum).
+  - `alpha` (float, default 0.01)
+- Önemli davranışlar:
+  - Yetersiz blok sayısında test "skipped" (atlandı) olarak döner ve sebebi açıkça belirtilir.
+  - NIST referans ortalama ve varyans tablosu (L=6..16) kullanılır.
+- Çıktı metrikleri:
+  - `L`, `blocks` (toplam blok), `init_Q`, `processed_blocks` (K), `fn` (ortalama log2 mesafe), `expected`, `variance`, `z_score`, `total_bits`
+- Kullanım örneği:
+```python
+# python
+from patternlab.plugins.maurers_universal import MaurersUniversalTest
+from patternlab.plugin_api import BytesView
+
+plugin = MaurersUniversalTest()
+data = BytesView(open("test.bin","rb").read())
+res = plugin.run(data, {"L": 6})
+if isinstance(res, dict) and res.get("status") == "skipped":
+    print("Skipped:", res["reason"])
+else:
+    print(res.p_value, res.metrics["fn"])
+```
+
+### Linear Complexity (güncellenmiş)
+- Dosya: [`patternlab/plugins/linear_complexity.py`](patternlab/plugins/linear_complexity.py:1)  
+- Amaç ve NIST bağlantısı: Berlekamp–Massey algoritması ile bit dizisinin GF(2) üzerindeki lineer kompleksitesini hesaplar. NIST SP 800‑22'deki lineer kompleksite testine benzer istatistikler ve yaklaşık p-değerleri sunar; proje içinde diagnostic amaçlı kullanılabilir.
+- Parametreler ve varsayılanlar:
+  - `alpha` (float, default 0.01)
+  - Girdi uzunluğu n==0 ise test hata/uyarı içeren bir TestResult döndürür.
+- Hesaplama ve çıktı:
+  - `linear_complexity` (L), `n` (bit uzunluğu)
+  - Ayrıca NIST‑tarzı yaklaşık `mu`, `sigma`, `T`, `z`, `p_value_backend` (hangi yöntemin kullanıldığı)
+  - P-değeri için SciPy varsa `scipy.stats.norm` kullanılır, yoksa `math.erfc` fallback.
+- Kullanım örneği:
+```python
+# python
+from patternlab.plugins.linear_complexity import LinearComplexityTest
+from patternlab.plugin_api import BytesView
+
+plugin = LinearComplexityTest()
+res = plugin.run(BytesView(b'\xff\x00\x0f'), {})
+print(res.metrics["linear_complexity"], res.p_value)
+```
+
+Bu eklemeler geliştirici rehberi içinde yeni eklentilerin hızlı anlaşılması ve doğru parametrelerle kullanılabilmesi için tasarlanmıştır. Aşağıdaki bölümde (örnek eklenti) orijinal içerik korunmuştur.
 ## Örnek: Tam Bir Test Eklentisi
 
 Aşağıda proje içinde doğrudan kullanılabilecek minimal, test edilebilir bir TestPlugin örneği bulunmaktadır. Bu dosyayı [`patternlab/plugins/my_test.py`](patternlab/plugins/my_test.py:1) olarak ekleyebilirsiniz.

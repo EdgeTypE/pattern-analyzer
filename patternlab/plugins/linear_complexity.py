@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Dict, Any, List
+import math
 
 from patternlab.plugin_api import TestPlugin, TestResult, BytesView
 
@@ -66,14 +67,52 @@ class LinearComplexityTest(TestPlugin):
         bits = self._to_bits(data)
         n = len(bits)
         if n == 0:
-            return TestResult(test_name="linear_complexity", passed=False, p_value=None, category="diagnostic", metrics={"error": "no data"})
-
+            return TestResult(test_name="linear_complexity", passed=False, p_value=None, category="statistical", metrics={"error": "no data"})
+ 
         L = berlekamp_massey(bits)
-
+ 
+        # NIST SP 800-22 style approximations for mean and variance of linear complexity.
+        # Use sequence length n as the block length (single-block case).
+        # Reference-style expected value (mu) uses small-sample correction term.
+        # This implementation uses:
+        #   mu = n/2 + (9 + (-1)^(n+1)) / 36
+        #   sigma = sqrt(n / 4)
+        # adjusted statistic T = (-1)^n * (L - mu) + 2/9
+        # z = T / sigma, two-sided p-value from normal approx: p = erfc(|z|/sqrt(2))
+        mu = float(n) / 2.0 + (9.0 + float((-1) ** (n + 1))) / 36.0
+        sigma = math.sqrt(float(n) / 4.0) if n > 0 else 0.0
+ 
+        T = ((-1) ** n) * (float(L) - mu) + 2.0 / 9.0
+        z = 0.0 if sigma == 0.0 else (T / sigma)
+ 
+        # Prefer SciPy's accurate survival functions if available, otherwise fallback to math.erfc
+        try:
+            from scipy.stats import norm  # type: ignore
+            # two-sided p-value
+            p_value = float(2.0 * (1.0 - norm.cdf(abs(z))))
+            p_backend = "scipy.stats.norm"
+        except Exception:
+            p_value = float(math.erfc(abs(z) / math.sqrt(2.0)))
+            p_backend = "math.erfc"
+ 
+        # Decide pass/fail by alpha (default 0.01 following NIST defaults)
+        alpha = float(params.get("alpha", 0.01))
+        passed = bool(p_value >= alpha)
+ 
         metrics: Dict[str, Any] = {
             "linear_complexity": int(L),
             "n": n,
+            "mu": mu,
+            "sigma": sigma,
+            "T": T,
+            "z": z,
+            "p_value_backend": p_backend,
         }
-    
-        # No formal p-value: mark as diagnostic and exclude from FDR calculations.
-        return TestResult(test_name="linear_complexity", passed=True, p_value=None, category="diagnostic", metrics=metrics)
+ 
+        return TestResult(
+            test_name="linear_complexity",
+            passed=passed,
+            p_value=p_value,
+            category="statistical",
+            metrics=metrics,
+        )

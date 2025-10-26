@@ -1,4 +1,5 @@
 import random
+import pytest
 
 from patternlab.plugins.maurers_universal import MaurersUniversalTest
 from patternlab.plugin_api import BytesView, TestResult
@@ -35,7 +36,8 @@ def test_maurers_universal_regular_vs_random():
 
     plugin = MaurersUniversalTest()
 
-    params = {"L": 6, "alpha": 0.01}  # L=6 uses built-in reference table
+    # Use small Q/min_blocks in tests so we can run the test with limited input
+    params = {"L": 6, "Q": 10, "min_blocks": 20, "alpha": 0.01}
 
     res_reg = plugin.run(reg_view, params)
     res_rnd = plugin.run(rnd_view, params)
@@ -69,3 +71,21 @@ def test_maurers_universal_skipped_for_small_input():
     assert isinstance(res, dict)
     assert res.get("status") == "skipped"
     assert "insufficient data" in res.get("reason", "")
+
+
+def test_maurers_universal_invalid_L_raises_value_error():
+    # Prepare a small valid buffer
+    N = 192
+    random.seed(1)
+    bits = [random.getrandbits(1) for _ in range(N)]
+    b = bits_to_bytes(bits)
+    view = BytesView(b)
+    plugin = MaurersUniversalTest()
+
+    # L too small should raise ValueError
+    with pytest.raises(ValueError):
+        plugin.run(view, {"L": 3})
+
+    # Non-integer L should raise ValueError
+    with pytest.raises(ValueError):
+        plugin.run(view, {"L": "not-an-int"})
