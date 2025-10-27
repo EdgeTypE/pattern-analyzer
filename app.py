@@ -8,7 +8,19 @@ st.set_page_config(page_title="PatternLab Analizi", layout="wide")
 engine = Engine()
 
 def run_analysis(config):
-    result = engine.analyze(config)
+    # input_bytes'ı hesaplayalım
+    input_bytes = b""
+    if config.get('data', {}).get('file'):
+        uploaded_file = config['data']['file']
+        if uploaded_file is not None:
+            input_bytes = uploaded_file.read()
+    elif config.get('data', {}).get('text'):
+        text = config['data']['text']
+        if text:
+            input_bytes = text.encode('utf-8')
+
+    # engine.analyze çağrısı doğru parametrelerle
+    result = engine.analyze(input_bytes, config)
     st.session_state['analysis_result'] = result
 
 def main():
@@ -69,12 +81,17 @@ def main():
                 'file': st.session_state.uploaded_file,
                 'text': st.session_state.text_input,
             },
-            'tests': st.session_state.selected_tests,
-            'transforms': st.session_state.selected_transforms,
+            'tests': [{'name': t} for t in st.session_state.selected_tests],
+            'transforms': [{'name': tr} for tr in st.session_state.selected_transforms],
         }
 
         with st.spinner('Analiz yapılıyor...'):
-            threading.Thread(target=run_analysis, args=(config,)).start()
+            # Thread yerine direkt çağrı yapalım
+            try:
+                run_analysis(config)
+            except Exception as e:
+                st.error(f"Analiz hatası: {str(e)}")
+                st.session_state['analysis_result'] = {"error": str(e)}
 
     # Gösterim: Analiz sonucu session_state'te varsa ana ekranda göster
     if 'analysis_result' in st.session_state:
@@ -100,13 +117,16 @@ def main():
         st.subheader("Bulgular")
         if results:
             df = pd.DataFrame(results)
+            # Metrics sütunu sorun çıkarabilir, onu çıkaralım
+            if 'metrics' in df.columns:
+                df = df.drop(columns=['metrics'])
             if 'p_value' in df.columns:
                 def _p_style(v):
                     try:
                         return 'background-color: red' if float(v) < 0.05 else ''
                     except Exception:
                         return ''
-                styled = df.style.applymap(_p_style, subset=['p_value'])
+                styled = df.style.map(_p_style, subset=['p_value'])
                 st.dataframe(styled)
             else:
                 st.dataframe(df)
@@ -131,12 +151,25 @@ def main():
                 visuals = selected_result.get('visuals') if isinstance(selected_result, dict) else None
                 if visuals:
                     st.subheader("Görseller")
-                    for v in visuals:
-                        try:
-                            st.image(v, use_column_width=True)
-                        except Exception:
-                            # Eğer doğrudan gösterilemiyorsa base64 veya ham SVG olabilir; yine de dene
-                            st.image(v)
+                    for vname, vdata in visuals.items():
+                        if isinstance(vdata, dict):
+                            if 'data_base64' in vdata:
+                                try:
+                                    import base64
+                                    mime = vdata.get('mime', 'image/svg+xml')
+                                    img_data = base64.b64decode(vdata['data_base64'])
+                                    st.image(img_data, caption=vname, use_container_width=True)
+                                except Exception as e:
+                                    st.error(f"Görsel gösterilemedi ({vname}): {str(e)}")
+                            elif 'path' in vdata:
+                                try:
+                                    st.image(vdata['path'], caption=vname, use_column_width=True)
+                                except Exception as e:
+                                    st.error(f"Görsel gösterilemedi ({vname}): {str(e)}")
+                            else:
+                                st.write(f"Görsel verisi tanınmıyor: {vname}")
+                        else:
+                            st.write(f"Görsel formatı yanlış: {vname}")
         else:
             st.info("Henüz analiz sonucu yok veya sonuç listesi boş.")
 
