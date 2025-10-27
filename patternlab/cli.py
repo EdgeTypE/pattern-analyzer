@@ -5,7 +5,24 @@ import click
 import os
 from .engine import Engine
 from .plugin_api import serialize_testresult
-
+ 
+def _json_default(obj):
+    """Fallback serializer to convert numpy scalars/arrays and bytes into JSON-friendly types."""
+    try:
+        import numpy as _np  # type: ignore
+        if isinstance(obj, _np.generic):
+            return obj.item()
+        if isinstance(obj, _np.ndarray):
+            return obj.tolist()
+    except Exception:
+        pass
+    if isinstance(obj, (bytes, bytearray)):
+        try:
+            return bytes(obj).hex()
+        except Exception:
+            return str(obj)
+    return str(obj)
+ 
 try:
     import yaml  # optional dependency for YAML config files
 except Exception:
@@ -83,6 +100,21 @@ def analyze(input_file, output_file, xor_value, discover, config_path, profile, 
             "fft_spectral",
             "autocorrelation",
             "linear_complexity",
+            # Advanced tests added by integration
+            "diehard_birthday_spacings",
+            "diehard_overlapping_sums",
+            "diehard_3d_spheres",
+            "testu01_smallcrush",
+            "dft_spectral_advanced",
+            "hurst_exponent",
+            # Crypto-specific analysis plugins (ECB/frequency/known-constants)
+            "ecb_detector",
+            "frequency_pattern",
+            "known_constants_search",
+            # Machine-learning based anomaly detection plugins
+            "lstm_gru_anomaly",
+            "autoencoder_anomaly",
+            "classifier_labeler",
         ]
 
         file_conf = {}
@@ -160,7 +192,8 @@ def analyze(input_file, output_file, xor_value, discover, config_path, profile, 
 
         # Write output directly as JSON following the new schema
         with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(output, f, indent=2)
+            # Use custom default serializer to handle numpy types and bytes produced by plugins
+            json.dump(output, f, indent=2, default=_json_default)
 
         click.echo(f"Analysis complete. Results written to {output_file}")
 

@@ -23,11 +23,30 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.0.0",
+    "numpy>=1.25.0",
+    "scipy>=1.10.0",
+    # Format-analysis helpers
+    "python-magic>=0.4.27",
+    "pefile>=2024.2.1",
+    "oletools>=0.63.0",
+    # Crypto helpers used by new plugins
+    "cryptography>=41.0.0",
+    "pycryptodome>=3.18.0",
+    # Optional ML dependencies for anomaly detection plugins (recommended extras 'ml')
+    # Note: these are heavy; kept as optional extras to avoid forcing installs for all users.
 ]
 
 [project.optional-dependencies]
 test = [
     "pytest>=7.0.0",
+]
+ml = [
+    "tensorflow>=2.12.0 ; platform_system != 'Windows' or python_version >= '3.10'",
+    "tensorflow-cpu>=2.12.0 ; platform_system == 'Windows' and python_version >= '3.10'",
+    "scikit-learn>=1.2.0",
+    "joblib>=1.2.0",
+    "pandas>=2.0.0",
+    "tensorflow-io>=0.32.0 ; python_version >= '3.10'",
 ]
 
 [project.scripts]
@@ -66,6 +85,29 @@ xor_const = "patternlab.plugins.xor_const:XOPlugin"
 # parallel_helpers exposes two TestPlugin implementations used in tests; keep both entry points.
 parallel_quick_stat = "patternlab.plugins.parallel_helpers:QuickStat"
 parallel_blocking = "patternlab.plugins.parallel_helpers:BlockingTest"
+# New advanced statistical test plugins (Dieharder, TestU01, spectral adv, Hurst)
+diehard_birthday_spacings = "patternlab.plugins.diehard_birthday_spacings:BirthdaySpacingsTest"
+diehard_overlapping_sums = "patternlab.plugins.diehard_overlapping_sums:OverlappingSumsTest"
+diehard_3d_spheres = "patternlab.plugins.diehard_3d_spheres:ThreeDSpheresTest"
+testu01_smallcrush = "patternlab.plugins.testu01_smallcrush:SmallCrushAdapter"
+dft_spectral_advanced = "patternlab.plugins.dft_spectral_advanced:DFTSpectralAdvancedTest"
+hurst_exponent = "patternlab.plugins.hurst_exponent:HurstExponentTest"
+conditional_entropy = "patternlab.plugins.conditional_entropy:ConditionalEntropyTest"
+mutual_information = "patternlab.plugins.mutual_information:MutualInformationTest"
+transfer_entropy = "patternlab.plugins.transfer_entropy:TransferEntropyTest"
+# Machine-learning based anomaly detection plugins (LSTM/GRU, Autoencoder, Classifier labeler)
+lstm_gru_anomaly = "patternlab.plugins.lstm_gru_anomaly:LSTMGRUAnomalyPlugin"
+autoencoder_anomaly = "patternlab.plugins.autoencoder_anomaly:AutoencoderAnomalyPlugin"
+classifier_labeler = "patternlab.plugins.classifier_labeler:ClassifierLabelerPlugin"
+# Structural/format analysis plugins added by integration
+magic_detector = "patternlab.plugins.magic_detector:MagicDetector"
+png_structure = "patternlab.plugins.png_structure:PNGStructure"
+zip_structure = "patternlab.plugins.zip_structure:ZIPStructure"
+pdf_structure = "patternlab.plugins.pdf_structure:PDFStructure"
+# Crypto analysis plugins integrated: ECB detection, frequency/pattern, known constants/S-box search
+ecb_detector = "patternlab.plugins.ecb_detector:ECBDetector"
+frequency_pattern = "patternlab.plugins.frequency_pattern:FrequencyPattern"
+known_constants_search = "patternlab.plugins.known_constants_search:KnownConstantsSearch"
 [project.urls]
 Homepage = "https://github.com/example/patternlab"
 Repository = "https://github.com/example/patternlab.git"

@@ -589,7 +589,11 @@ class Engine:
                                 raw_results.append({"test_name": rem.get('name'), "status": "skipped", "reason": "budget_exhausted"})
                         break
 
-                tp = self._tests[c['name']]
+                # Allow missing/unregistered tests to be gracefully skipped instead of raising KeyError.
+                tp = self._tests.get(c['name'])
+                if tp is None:
+                    raw_results.append({"test_name": c.get('name'), "status": "skipped", "reason": "test_not_registered"})
+                    continue
                 reqs = getattr(tp, 'requires', []) or []
                 missing_reqs: List[str] = []
                 # Lazy caches for data views that may be expensive
