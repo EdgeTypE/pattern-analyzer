@@ -380,9 +380,16 @@ def serve_ui(host, port, reload):
                 raise click.ClickException(
                     "streamlit is required to run 'serve-ui'.\n"
                     "Install it with: pip install streamlit\n"
-                    "Or run the server manually: streamlit run app.py --server.address {host} --server.port {port}".format(host=host, port=port)
+                    "Or run the server manually: streamlit run <path-to-app.py> --server.address {host} --server.port {port}".format(host=host, port=port)
                 )
-            cmd = ['streamlit', 'run', 'app.py', '--server.address', host, '--server.port', str(port)]
+            # Resolve app.py path relative to the project root (one level above the package)
+            app_py_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app.py'))
+            if not os.path.exists(app_py_path):
+                # Provide a clear error showing which path was checked
+                raise click.ClickException(f"Invalid value: File does not exist: {app_py_path}\n"
+                                           "Ensure app.py exists at the project root or run streamlit manually with the correct path.")
+            click.echo(f"Starting streamlit with app: {app_py_path}")
+            cmd = ['streamlit', 'run', app_py_path, '--server.address', host, '--server.port', str(port)]
             subprocess.run(cmd, check=True)
         except click.ClickException:
             raise

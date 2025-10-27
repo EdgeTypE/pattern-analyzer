@@ -2,7 +2,25 @@
  
 from typing import Optional
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Static, DirectoryTree, Checkbox, Button, ScrollView, LoadingIndicator, DataTable
+# ScrollView API moved between textual versions; try importing from widgets first,
+# then from containers, otherwise provide a minimal fallback shim so the TUI still runs.
+try:
+    from textual.widgets import Header, Footer, Static, DirectoryTree, Checkbox, Button, LoadingIndicator, DataTable
+    from textual.containers import VerticalScroll as ScrollView
+    _SCROLL_SRC = 'textual.containers'
+except Exception:
+    try:
+        # some textual versions expose ScrollView from widgets
+        from textual.widgets import Header, Footer, Static, DirectoryTree, Checkbox, Button, LoadingIndicator, DataTable, ScrollView
+        _SCROLL_SRC = 'textual.widgets'
+    except Exception:
+        # final fallback: emulate a simple ScrollView using Container so imports succeed and children are rendered
+        from textual.widgets import Header, Footer, Static, DirectoryTree, Checkbox, Button, LoadingIndicator, DataTable
+        from textual.containers import Container
+        class ScrollView(Container):  # type: ignore
+            """Fallback ScrollView used when textual does not provide one."""
+            pass
+        _SCROLL_SRC = 'fallback'
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from patternlab.engine import Engine
@@ -51,6 +69,7 @@ class PatternLabTUI(App):
                     DataTable(id="results_table"),
                     Static("Tıklanabilir sonuç listesi", id="results_list_label"),
                     ScrollView(id="results_scroll"),
+                    Static("", id="status", expand=False),  # Status mesajları için
                     Horizontal(
                         Button("Başlat", id="start_btn", variant="success"),
                         Button("Çıkış", id="exit_btn", variant="error"),
@@ -236,17 +255,17 @@ class PatternLabTUI(App):
                         file_path = str(val)
                     break
  
-            footer = self.query_one(Footer)
- 
+            status = self.query_one("#status", Static)
+  
             # Eğer analiz zaten çalışıyorsa yeni analiz başlatma
             if getattr(self, "_analysis_running", False):
-                footer.update("Analiz zaten çalışıyor")
+                status.update("Analiz zaten çalışıyor")
                 return
- 
+  
             # Hazırlık: Loading göster, flag set
             self._analysis_running = True
             self._show_loading()
-            footer.update(f"Analiz başlatıldı — seçili testler: {len(selected_tests)}")
+            status.update(f"Analiz başlatıldı — seçili testler: {len(selected_tests)}")
  
             # Worker fonksiyonu: Engine.analyze'ı arka planda çağırır
             def _worker():
@@ -267,28 +286,31 @@ class PatternLabTUI(App):
  
             # tamamlandığında çağrılacak callback
             def _on_done(result):
-                # Analiz sona erdi — Loading'i gizle ve footer'ı güncelle
                 self._analysis_running = False
                 self._hide_loading()
                 try:
-                    footer.update("Analiz tamamlandı — sonuçlar gösteriliyor")
-                except Exception:
-                    pass
-                # Sonuçları göster
-                try:
-                    self._display_results(result or {})
-                except Exception:
-                    pass
+                    if isinstance(result, dict) and "error" in result:
+                        status.update(f"Analiz hatası: {result['error']}")
+                    else:
+                        status.update("Analiz tamamlandı — sonuçlar gösteriliyor")
+                        self._display_results(result or {})
+                except Exception as e:
+                    status.update(f"Görüntüleme hatası: {e}")
  
-            # run_worker ile arka plan çalıştır; callback ile tamamlandığında UI güncellenecek
+            # Standart threading ile arka plan çalıştır
             try:
-                # Textual'ın run_worker API'sini kullanıyoruz
-                self.run_worker(_worker, callback=_on_done)
-            except Exception:
-                # Eğer run_worker erişilemezse, flag'i temizle ve Loading'i gizle
+                import threading
+                def _thread_worker():
+                    result = _worker()
+                    # Callback'i main thread'de çalıştır
+                    self.call_from_thread(_on_done, result)
+                thread = threading.Thread(target=_thread_worker, daemon=True)
+                thread.start()
+            except Exception as e:
+                # Hata durumunda temizle
                 self._analysis_running = False
                 self._hide_loading()
-                footer.update("Analiz başlatılamadı (run_worker mevcut değil)")
+                status.update(f"Analiz başlatılamadı: {e}")
             return
  
         # Modal kapatma düğmesi
@@ -328,7 +350,15 @@ class MetricsModal(ModalScreen):
     def compose(self) -> ComposeResult:
         yield Vertical(
             Static(f"Metrikler — {self.test_name}", id="modal_title"),
-            ScrollView(Static(self.metrics_text, id="modal_metrics")),
+            (
+                Static(self.metrics_text, id="modal_metrics")
+                if _SCROLL_SRC == 'fallback'
+                else
+                ScrollView(self.metrics_text, id="modal_metrics")
+                if _SCROLL_SRC == 'textual.widgets'
+                else
+                ScrollView(Static(self.metrics_text), id="modal_metrics")
+            ),
             Horizontal(
                 Button("Kapat", id="modal_close", variant="primary"),
             ),

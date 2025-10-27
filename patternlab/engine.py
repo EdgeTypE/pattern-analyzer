@@ -493,7 +493,7 @@ class Engine:
         """
         # Normalize input
         data = BytesView(input_bytes)
-        print("DEBUG: Engine.analyze start - registered tests:", list(self._tests.keys()))
+        logging.getLogger(__name__).debug("Engine.analyze start - registered tests: %s", list(self._tests.keys()))
         # Configure logging (attach JSONL file handler when requested)
         try:
             self._configure_logging(config)
@@ -1630,7 +1630,7 @@ class Engine:
  
         output = {"results": serialized_results, "scorecard": scorecard, "meta": meta}
         try:
-            print("DEBUG: Engine.analyze returning output - results count:", len(serialized_results))
+            logging.getLogger(__name__).debug("Engine.analyze returning output - results count: %d", len(serialized_results))
         except Exception:
             pass
         return output
