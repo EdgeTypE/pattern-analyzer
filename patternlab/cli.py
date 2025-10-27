@@ -366,29 +366,44 @@ def bench(calibrate, samples, seed, out_dir, profile):
 @click.option('--port', 'port', default=8000, type=int, help='Port for the UI server')
 @click.option('--reload', 'reload', is_flag=True, default=False, help='Enable auto-reload (development only)')
 def serve_ui(host, port, reload):
-    """Serve the self-hosted frontend UI together with the API using uvicorn.
+    """Serve the self-hosted frontend UI using Streamlit.
 
-    Serves the FastAPI app which already mounts the static UI at /ui.
+    This command runs: streamlit run app.py --server.address HOST --server.port PORT
     """
     try:
-        click.echo(f"Starting PatternLab UI at http://{host}:{port}/")
-        # Lazy import uvicorn so CLI can be used without the optional dependency installed.
+        click.echo(f"Starting PatternLab Streamlit UI at http://{host}:{port}/")
         try:
-            import uvicorn  # type: ignore
-        except Exception:
-            # Provide a clear actionable error via Click
-            raise click.ClickException(
-                "uvicorn is required to run 'serve-ui'.\n"
-                "Install it with: pip install \"uvicorn[standard]\"\n"
-                "Or run the server manually: python -m uvicorn patternlab.api:app --host {host} --port {port}".format(host=host, port=port)
-            )
-        # Use module path so uvicorn picks up patternlab.api:app
-        uvicorn.run("patternlab.api:app", host=host, port=port, reload=reload)
+            import shutil
+            import subprocess
+            # Ensure streamlit executable is available
+            if shutil.which('streamlit') is None:
+                raise click.ClickException(
+                    "streamlit is required to run 'serve-ui'.\n"
+                    "Install it with: pip install streamlit\n"
+                    "Or run the server manually: streamlit run app.py --server.address {host} --server.port {port}".format(host=host, port=port)
+                )
+            cmd = ['streamlit', 'run', 'app.py', '--server.address', host, '--server.port', str(port)]
+            subprocess.run(cmd, check=True)
+        except click.ClickException:
+            raise
+        except Exception as e:
+            # Wrap subprocess/import errors into a ClickException for clearer output
+            raise click.ClickException(f"Failed to start streamlit: {e}")
     except click.ClickException:
-        # Let Click handle this exception type (it will print the message)
         raise
     except Exception as e:
         click.echo(f"serve-ui failed: {e}", err=True)
+        raise click.Abort()
+
+@cli.command()
+def tui():
+    """Start the PatternLab Textual TUI."""
+    try:
+        click.echo("Starting PatternLab Textual TUI...")
+        from .tui import PatternLabTUI
+        PatternLabTUI().run()
+    except Exception as e:
+        click.echo(f"Failed to start TUI: {e}", err=True)
         raise click.Abort()
 
 if __name__ == '__main__':

@@ -28,7 +28,7 @@ dependencies = [
     # Format-analysis helpers
     "python-magic>=0.4.27",
     "pefile>=2024.2.1",
-    "oletools>=0.63.0",
+    "oletools>=0.60.1",
     # Crypto helpers used by new plugins
     "cryptography>=41.0.0",
     "pycryptodome>=3.18.0",
@@ -47,6 +47,11 @@ ml = [
     "joblib>=1.2.0",
     "pandas>=2.0.0",
     "tensorflow-io>=0.32.0 ; python_version >= '3.10'",
+]
+
+ui = [
+    "streamlit>=1.30.0",
+    "textual",
 ]
 
 [project.scripts]
