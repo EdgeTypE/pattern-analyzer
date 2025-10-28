@@ -13,7 +13,7 @@ First, clone the repository and set up a Python virtual environment.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/pattern-analyzer.git
+git clone https://github.com/edgetype/pattern-analyzer.git
 cd pattern-analyzer
 
 # Create and activate a virtual environment

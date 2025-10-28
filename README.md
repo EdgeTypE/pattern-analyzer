@@ -62,7 +62,15 @@ patternanalyzer analyze test.bin --out report.json
 Use a specific configuration profile for a focused analysis (e.g., cryptographic tests).
 
 ```bash
-patternanalyzer analyze encrypted.bin --profile crypto --out crypto_report.json```
+patternanalyzer analyze encrypted.bin --profile crypto --out crypto_report.json
+```
+
+Generate an HTML report from the analysis results.
+
+```bash
+patternanalyzer analyze test.bin --profile crypto --out crypto_report.json --html-report crypto_report.html
+```
+![image](https://cdn.goygoyengine.com/images/1761659991392-b0e66ddbb38349f5.jpg)
 
 **Discovery Mode**
 
@@ -76,13 +84,11 @@ The output file `discover_report.json` will contain a list of potential transfor
 ### User Interfaces (Web & Terminal)
 
 **Web UI (Streamlit)**
-
 Launch an interactive web interface to upload files and visualize results.
-
 ```bash
 patternanalyzer serve-ui
 ```
-
+![webui](https://cdn.goygoyengine.com/images/1761659425529-a095c6d0a2b9a37b.jpg)
 **Terminal UI (TUI)**
 
 Start a terminal-based interface for analysis directly in your console.
@@ -90,6 +96,7 @@ Start a terminal-based interface for analysis directly in your console.
 ```bash
 patternanalyzer tui
 ```
+![tui](https://cdn.goygoyengine.com/images/1761659533556-75e7668833632c7a.jpg)
 
 ### Python API
 
