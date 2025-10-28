@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pattern Analyzer UI</title>
+<style>
+body{font-family:Segoe UI,Roboto,Arial,sans-serif;margin:0;padding:0;background:#f7f9fb;color:#222}
+.container{max-width:980px;margin:24px auto;padding:20px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+h1{margin:0 0 12px;font-size:20px}
+.row{display:flex;gap:12px;align-items:flex-start}
+.col{flex:1}
+label{display:block;margin-bottom:6px;font-weight:600}
+input[type=file],textarea,input,select{width:100%;padding:8px;border:1px solid #dfe6ee;border-radius:6px}
+textarea{min-height:100px;font-family:monospace}
+button{padding:8px 12px;border:0;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer}
+button.secondary{background:#6c757d}
+pre{background:#0b1220;color:#e6eef6;padding:12px;border-radius:6px;overflow:auto;max-height:360px}
+.status{margin-top:12px;padding:10px;border-radius:6px;background:#f1f7ff;color:#034;display:inline-block}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.1);border-top-color:#0066cc;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.artefacts img{max-width:100%;border:1px solid #e5eef6;border-radius:6px;margin:8px 0}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Pattern Analyzer - Basit Web UI</h1>
+<p>Kısa: dosya yükleyin veya base64 verisi yapıştırın, ardından "Analyze" tuşuna basın. Arka planda çalışan job durumunu göstereceğiz.</p>
+<div class="row" style="margin-bottom:12px">
+<div class="col">
+<label for="file">Dosya yükle</label>
+<input id="file" type="file" />
+</div>
+<div style="width:160px">
+<label for="profile">Profil</label>
+<select id="profile">
+<option value="">(varsayılan)</option>
+<option value="quick">quick</option>
+<option value="nist">nist</option>
+<option value="crypto">crypto</option>
+</select>
+</div>
+</div>
+<div style="margin-bottom:12px">
+<label for="base64">Veya Base64 verisini yapıştırın</label>
+<textarea id="base64" placeholder="base64 verisi..."></textarea>
+</div>
+<div style="margin-bottom:12px">
+<label for="config">İsteğe bağlı JSON config (tests/transforms)</label>
+<textarea id="config" placeholder='{"tests":["monobit"]}'></textarea>
+</div>
+<div style="display:flex;gap:8px">
+<button id="analyzeBtn">Analyze</button>
+<button id="clearBtn" class="secondary">Temizle</button>
+</div>
+<div id="statusArea" style="margin-top:12px"></div>
+<h2 style="margin-top:18px">Sonuç</h2>
+<div id="resultWrap">
+<pre id="resultPre">Henüz analiz yapılmadı.</pre>
+<div class="artefacts" id="artefacts"></div>
+</div>
+</div>
+<script>
+(function(){
+const analyzeBtn = document.getElementById('analyzeBtn');
+const clearBtn = document.getElementById('clearBtn');
+const fileInput = document.getElementById('file');
+const base64Input = document.getElementById('base64');
+const configInput = document.getElementById('config');
+const profileSelect = document.getElementById('profile');
+const statusArea = document.getElementById('statusArea');
+const resultPre = document.getElementById('resultPre');
+const artefactsEl = document.getElementById('artefacts');
+
+function setStatus(msg, busy=false){
+  statusArea.innerHTML = busy ? '<span class="spinner"></span><span class="status">'+msg+'</span>' : '<span class="status">'+msg+'</span>';
+}
+
+function clearResult(){
+  resultPre.textContent = '';
+  artefactsEl.innerHTML = '';
+}
+
+clearBtn.addEventListener('click', ()=>{
+  fileInput.value = '';
+  base64Input.value = '';
+  configInput.value = '';
+  profileSelect.value = '';
+  setStatus('Temizlendi', false);
+  resultPre.textContent = 'Henüz analiz yapılmadı.';
+  artefactsEl.innerHTML = '';
+});
+
+analyzeBtn.addEventListener('click', async ()=>{
+  setStatus('Gönderiliyor...', true);
+  clearResult();
+  const file = fileInput.files && fileInput.files[0];
+  const profile = profileSelect.value || null;
+  const cfgText = configInput.value.trim();
+  let cfg = null;
+  if (cfgText){
+    try { cfg = JSON.parse(cfgText); } catch(e){ setStatus('Config JSON hatası: '+e.message); return; }
+  }
+
+  try {
+    let resp;
+    if (file){
+      const fd = new FormData();
+      fd.append('file', file);
+      if (cfg) fd.append('config', new Blob([JSON.stringify(cfg)], {type:'application/json'}));
+      if (profile) {
+        const pcfg = cfg || {};
+        pcfg.profile = profile;
+        fd.set('config', new Blob([JSON.stringify(pcfg)], {type:'application/json'}));
+      }
+      resp = await fetch('/analyze', {method:'POST', body: fd});
+    } else if (base64Input.value.trim()){
+      const payload = { base64_data: base64Input.value.trim(), config: cfg || {} };
+      if (profile) payload.config.profile = profile;
+      resp = await fetch('/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    } else {
+      setStatus('Hata: Dosya veya base64 verisi sağlayın', false);
+      return;
+    }
+    if (!resp.ok){
+      const txt = await resp.text();
+      setStatus('Sunucu hata: '+resp.status+' '+txt, false);
+      return;
+    }
+    const j = await resp.json();
+    const jobId = j.job_id;
+    setStatus('Job başlatıldı: '+jobId, true);
+    pollJob(jobId);
+  } catch (e){
+    setStatus('İstek hatası: '+e.message, false);
+  }
+});
+
+async function pollJob(jobId){
+  const url = '/report/'+jobId;
+  let finished = false;
+  while(!finished){
+    try {
+      const r = await fetch(url);
+      if (!r.ok){ setStatus('Job sorgu hatası: '+r.status); return; }
+      const j = await r.json();
+      if (j.status === 'pending' || j.status === 'running'){
+        setStatus('İşleniyor: '+j.status, true);
+        await new Promise(res=>setTimeout(res, 1000));
+        continue;
+      }
+      if (j.status === 'completed'){
+        setStatus('Tamamlandı', false);
+        const report = j.report || {};
+        resultPre.textContent = JSON.stringify(report, null, 2);
+        // If engine included html_report path in top-level, show iframe.
+        // If the path looks like a local file (not an HTTP(S) URL), route it through
+        // the API helper endpoint /artefact so browsers can fetch it via the server.
+        if (report && report.html_report){
+          const iframe = document.createElement('iframe');
+          let src = report.html_report;
+          // Treat as URL if it begins with http(s)://
+          if (!/^https?:\/\//i.test(src)) {
+            // Otherwise encode and route through artefact endpoint
+            src = '/artefact?path=' + encodeURIComponent(src);
+          }
+          iframe.src = src;
+          iframe.style.width = '100%';
+          iframe.style.height = '500px';
+          artefactsEl.appendChild(iframe);
+        }
+        // If artefacts listed as array `artefacts` with URLs/paths, show images/links.
+        // Non-HTTP paths will be proxied through /artefact?path=...
+        if (report && report.artefacts && Array.isArray(report.artefacts)){
+          report.artefacts.forEach(a=>{
+            const aEl = document.createElement('div');
+            // Normalize path: if it's not an http(s) URL, proxy via /artefact
+            let href = a;
+            if (!/^https?:\/\//i.test(href)) {
+              href = '/artefact?path=' + encodeURIComponent(href);
+            }
+            if (/\.(png|jpg|jpeg|svg)$/i.test(a)){
+              const img = document.createElement('img');
+              img.src = href;
+              aEl.appendChild(img);
+            } else {
+              const link = document.createElement('a');
+              link.href = href;
+              link.textContent = a;
+              link.target = '_blank';
+              aEl.appendChild(link);
+            }
+            artefactsEl.appendChild(aEl);
+          });
+        }
+        finished = true;
+        return;
+      }
+      if (j.status === 'error'){
+        setStatus('İş hata ile sonuçlandı', false);
+        resultPre.textContent = JSON.stringify(j.error || 'unknown error', null, 2);
+        return;
+      }
+      setStatus('Bilinmeyen durum: '+j.status, false);
+      return;
+    } catch (e){
+      setStatus('Polling hatası: '+e.message, false);
+      return;
+    }
+  }
+}
+
+// Small helper: add safe getter without iterating keys during JSON.stringify
+Object.defineProperty(Object.prototype, 'get', {
+  value: function(key){ return this && this[key] !== undefined ? this[key] : null; },
+  enumerable: false,
+  configurable: true,
+  writable: true
+});
+})();
+</script>
+</body>
+</html>

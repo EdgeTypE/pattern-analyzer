@@ -1,7 +1,7 @@
 import time
 import math
-from patternlab.engine import Engine
-from patternlab.plugins.parallel_helpers import QuickStat, BlockingTest
+from patternanalyzer.engine import Engine
+from patternanalyzer.plugins.parallel_helpers import QuickStat, BlockingTest
 
 def _find_result(results, name):
     for r in results:

@@ -1,8 +1,8 @@
 """Unit tests for BlockFrequencyTest plugin."""
 
 import pytest
-from patternlab.plugins.block_frequency_test import BlockFrequencyTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.block_frequency_test import BlockFrequencyTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestBlockFrequency:

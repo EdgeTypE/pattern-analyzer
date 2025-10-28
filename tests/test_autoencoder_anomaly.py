@@ -1,5 +1,5 @@
-from patternlab.plugins.autoencoder_anomaly import AutoencoderAnomalyPlugin
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugins.autoencoder_anomaly import AutoencoderAnomalyPlugin
+from patternanalyzer.plugin_api import BytesView
 
 def test_autoencoder_stub_batch():
     data = bytes([((i*7) % 256) for i in range(1024)])

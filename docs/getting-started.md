@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide will walk you through the basic steps to set up PatternLab and perform your first analysis.
+This guide will walk you through the basic steps to set up Pattern Analyzer and perform your first analysis.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ python -m venv .venv
 pip install -e .[test,ml,ui]
 ```
 
-This command installs PatternLab and all dependencies required for the user interfaces, machine learning plugins, and running tests.
+This command installs Pattern Analyzer and all dependencies required for the user interfaces, machine learning plugins, and running tests.
 
 ## Running Your First Analysis (CLI)
 
@@ -33,7 +33,7 @@ The Command-Line Interface (CLI) is the quickest way to analyze a file. Let's an
 
 ```bash
 # Run analysis on a file and save the output to report.json
-patternlab analyze test.bin --out report.json
+patternanalyzer analyze test.bin --out report.json
 ```
 
 After the command completes, a `report.json` file will be created in your directory. It contains a detailed breakdown of the results from all default tests.
@@ -60,12 +60,12 @@ After the command completes, a `report.json` file will be created in your direct
 
 ## Using the Python API
 
-For more advanced use cases, you can integrate PatternLab directly into your Python scripts.
+For more advanced use cases, you can integrate Pattern Analyzer directly into your Python scripts.
 
 Create a file named `example.py` with the following content:
 
 ```python
-from patternlab.engine import Engine
+from patternanalyzer.engine import Engine
 import json
 
 # 1. Initialize the analysis engine
@@ -99,7 +99,7 @@ python example.py
 
 ## Launching the Web UI
 
-PatternLab includes a user-friendly web interface built with Streamlit for interactive analysis.
+Pattern Analyzer includes a user-friendly web interface built with Streamlit for interactive analysis.
 
 To start it, run the following command in your terminal:
 

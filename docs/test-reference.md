@@ -1,6 +1,6 @@
 # Test Reference
 
-This document provides a reference for the built-in test and analysis plugins available in PatternLab.
+This document provides a reference for the built-in test and analysis plugins available in Pattern Analyzer.
 
 ## Plugin Categories
 

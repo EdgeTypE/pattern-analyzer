@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "patternlab"
+name = "patternanalyzer"
 version = "0.1.0"
 description = "Binary pattern analysis framework"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "PatternLab Team"}
+    {name = "EdgeTypE", email = "edgetype@goygoyengine.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -46,7 +46,7 @@ ml = [
     "scikit-learn>=1.2.0",
     "joblib>=1.2.0",
     "pandas>=2.0.0",
-    "tensorflow-io>=0.32.0 ; python_version >= '3.10'",
+    # "tensorflow-io>=0.32.0 ; python_version >= '3.10'",
 ]
 
 ui = [
@@ -55,68 +55,68 @@ ui = [
 ]
 
 [project.scripts]
-patternlab = "patternlab.cli:cli"
+patternanalyzer = "patternanalyzer.cli:cli"
 
 
-[project.entry-points."patternlab.plugins"]
+[project.entry-points."patternanalyzer.plugins"]
 # Auto-generated: map all discovered plugin modules -> their export symbols
 # Selection rules used:
 #  - Prefer explicit well-known export/class names when present (ENTRY_POINT, PLUGIN, Plugin, make_plugin, load_plugin)
 #  - Otherwise use the single TestPlugin/VisualPlugin-derived class defined in the module.
 # Notes:
-#  - patternlab.plugins.parallel_helpers defines two test classes; both are registered intentionally.
-approximate_entropy = "patternlab.plugins.approximate_entropy:ApproximateEntropyTest"
-autocorrelation = "patternlab.plugins.autocorrelation:AutocorrelationTest"
-binary_matrix_rank = "patternlab.plugins.binary_matrix_rank:BinaryMatrixRankTest"
-block_frequency = "patternlab.plugins.block_frequency_test:BlockFrequencyTest"
-cusum = "patternlab.plugins.cusum:CumulativeSumsTest"
-dotplot = "patternlab.plugins.dotplot:DotplotTest"
-fft_placeholder = "patternlab.plugins.fft_placeholder:FFTPlaceholder"
-fft_spectral = "patternlab.plugins.fft_spectral:FFTSpectralTest"
-linear_complexity = "patternlab.plugins.linear_complexity:LinearComplexityTest"
-longest_run = "patternlab.plugins.longest_run:LongestRunOnesTest"
-lz_complexity = "patternlab.plugins.lz_complexity:LZComplexityTest"
-maurers_universal = "patternlab.plugins.maurers_universal:MaurersUniversalTest"
-monobit = "patternlab.plugins.monobit:MonobitTest"
-nist_dft_spectral = "patternlab.plugins.nist_dft_spectral:NISTDFTSpectralTest"
-non_overlapping_template_matching = "patternlab.plugins.non_overlapping_template_matching:NonOverlappingTemplateMatching"
-overlapping_template_matching = "patternlab.plugins.overlapping_template_matching:OverlappingTemplateMatching"
-random_excursions_variant = "patternlab.plugins.random_excursions_variant:RandomExcursionsVariantTest"
-random_excursions = "patternlab.plugins.random_excursions:RandomExcursionsTest"
-runs = "patternlab.plugins.runs_test:RunsTest"
-serial = "patternlab.plugins.serial_test:SerialTest"
-vigenere = "patternlab.plugins.vigenere:VigenerePlugin"
-xor_const = "patternlab.plugins.xor_const:XOPlugin"
+#  - patternanalyzer.plugins.parallel_helpers defines two test classes; both are registered intentionally.
+approximate_entropy = "patternanalyzer.plugins.approximate_entropy:ApproximateEntropyTest"
+autocorrelation = "patternanalyzer.plugins.autocorrelation:AutocorrelationTest"
+binary_matrix_rank = "patternanalyzer.plugins.binary_matrix_rank:BinaryMatrixRankTest"
+block_frequency = "patternanalyzer.plugins.block_frequency_test:BlockFrequencyTest"
+cusum = "patternanalyzer.plugins.cusum:CumulativeSumsTest"
+dotplot = "patternanalyzer.plugins.dotplot:DotplotTest"
+fft_placeholder = "patternanalyzer.plugins.fft_placeholder:FFTPlaceholder"
+fft_spectral = "patternanalyzer.plugins.fft_spectral:FFTSpectralTest"
+linear_complexity = "patternanalyzer.plugins.linear_complexity:LinearComplexityTest"
+longest_run = "patternanalyzer.plugins.longest_run:LongestRunOnesTest"
+lz_complexity = "patternanalyzer.plugins.lz_complexity:LZComplexityTest"
+maurers_universal = "patternanalyzer.plugins.maurers_universal:MaurersUniversalTest"
+monobit = "patternanalyzer.plugins.monobit:MonobitTest"
+nist_dft_spectral = "patternanalyzer.plugins.nist_dft_spectral:NISTDFTSpectralTest"
+non_overlapping_template_matching = "patternanalyzer.plugins.non_overlapping_template_matching:NonOverlappingTemplateMatching"
+overlapping_template_matching = "patternanalyzer.plugins.overlapping_template_matching:OverlappingTemplateMatching"
+random_excursions_variant = "patternanalyzer.plugins.random_excursions_variant:RandomExcursionsVariantTest"
+random_excursions = "patternanalyzer.plugins.random_excursions:RandomExcursionsTest"
+runs = "patternanalyzer.plugins.runs_test:RunsTest"
+serial = "patternanalyzer.plugins.serial_test:SerialTest"
+vigenere = "patternanalyzer.plugins.vigenere:VigenerePlugin"
+xor_const = "patternanalyzer.plugins.xor_const:XOPlugin"
 # parallel_helpers exposes two TestPlugin implementations used in tests; keep both entry points.
-parallel_quick_stat = "patternlab.plugins.parallel_helpers:QuickStat"
-parallel_blocking = "patternlab.plugins.parallel_helpers:BlockingTest"
+parallel_quick_stat = "patternanalyzer.plugins.parallel_helpers:QuickStat"
+parallel_blocking = "patternanalyzer.plugins.parallel_helpers:BlockingTest"
 # New advanced statistical test plugins (Dieharder, TestU01, spectral adv, Hurst)
-diehard_birthday_spacings = "patternlab.plugins.diehard_birthday_spacings:BirthdaySpacingsTest"
-diehard_overlapping_sums = "patternlab.plugins.diehard_overlapping_sums:OverlappingSumsTest"
-diehard_3d_spheres = "patternlab.plugins.diehard_3d_spheres:ThreeDSpheresTest"
-testu01_smallcrush = "patternlab.plugins.testu01_smallcrush:SmallCrushAdapter"
-dft_spectral_advanced = "patternlab.plugins.dft_spectral_advanced:DFTSpectralAdvancedTest"
-hurst_exponent = "patternlab.plugins.hurst_exponent:HurstExponentTest"
-conditional_entropy = "patternlab.plugins.conditional_entropy:ConditionalEntropyTest"
-mutual_information = "patternlab.plugins.mutual_information:MutualInformationTest"
-transfer_entropy = "patternlab.plugins.transfer_entropy:TransferEntropyTest"
+diehard_birthday_spacings = "patternanalyzer.plugins.diehard_birthday_spacings:BirthdaySpacingsTest"
+diehard_overlapping_sums = "patternanalyzer.plugins.diehard_overlapping_sums:OverlappingSumsTest"
+diehard_3d_spheres = "patternanalyzer.plugins.diehard_3d_spheres:ThreeDSpheresTest"
+testu01_smallcrush = "patternanalyzer.plugins.testu01_smallcrush:SmallCrushAdapter"
+dft_spectral_advanced = "patternanalyzer.plugins.dft_spectral_advanced:DFTSpectralAdvancedTest"
+hurst_exponent = "patternanalyzer.plugins.hurst_exponent:HurstExponentTest"
+conditional_entropy = "patternanalyzer.plugins.conditional_entropy:ConditionalEntropyTest"
+mutual_information = "patternanalyzer.plugins.mutual_information:MutualInformationTest"
+transfer_entropy = "patternanalyzer.plugins.transfer_entropy:TransferEntropyTest"
 # Machine-learning based anomaly detection plugins (LSTM/GRU, Autoencoder, Classifier labeler)
-lstm_gru_anomaly = "patternlab.plugins.lstm_gru_anomaly:LSTMGRUAnomalyPlugin"
-autoencoder_anomaly = "patternlab.plugins.autoencoder_anomaly:AutoencoderAnomalyPlugin"
-classifier_labeler = "patternlab.plugins.classifier_labeler:ClassifierLabelerPlugin"
+lstm_gru_anomaly = "patternanalyzer.plugins.lstm_gru_anomaly:LSTMGRUAnomalyPlugin"
+autoencoder_anomaly = "patternanalyzer.plugins.autoencoder_anomaly:AutoencoderAnomalyPlugin"
+classifier_labeler = "patternanalyzer.plugins.classifier_labeler:ClassifierLabelerPlugin"
 # Structural/format analysis plugins added by integration
-magic_detector = "patternlab.plugins.magic_detector:MagicDetector"
-png_structure = "patternlab.plugins.png_structure:PNGStructure"
-zip_structure = "patternlab.plugins.zip_structure:ZIPStructure"
-pdf_structure = "patternlab.plugins.pdf_structure:PDFStructure"
+magic_detector = "patternanalyzer.plugins.magic_detector:MagicDetector"
+png_structure = "patternanalyzer.plugins.png_structure:PNGStructure"
+zip_structure = "patternanalyzer.plugins.zip_structure:ZIPStructure"
+pdf_structure = "patternanalyzer.plugins.pdf_structure:PDFStructure"
 # Crypto analysis plugins integrated: ECB detection, frequency/pattern, known constants/S-box search
-ecb_detector = "patternlab.plugins.ecb_detector:ECBDetector"
-frequency_pattern = "patternlab.plugins.frequency_pattern:FrequencyPattern"
-known_constants_search = "patternlab.plugins.known_constants_search:KnownConstantsSearch"
+ecb_detector = "patternanalyzer.plugins.ecb_detector:ECBDetector"
+frequency_pattern = "patternanalyzer.plugins.frequency_pattern:FrequencyPattern"
+known_constants_search = "patternanalyzer.plugins.known_constants_search:KnownConstantsSearch"
 [project.urls]
-Homepage = "https://github.com/example/patternlab"
-Repository = "https://github.com/example/patternlab.git"
-Issues = "https://github.com/example/patternlab/issues"
+Homepage = "https://github.com/EdgeTypE/pattern-analyzer"
+Repository = "https://github.com/EdgeTypE/pattern-analyzer.git"
+Issues = "https://github.com/EdgeTypE/pattern-analyzer/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

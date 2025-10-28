@@ -1,12 +1,12 @@
 import importlib.metadata as im
 import pytest
-from patternlab.engine import Engine
-from patternlab.plugins.vigenere import VigenerePlugin
-from patternlab.plugins.xor_const import XOPlugin
-from patternlab.plugins.monobit import MonobitTest
-from patternlab.plugins.cusum import CumulativeSumsTest
-from patternlab.plugins.binary_matrix_rank import BinaryMatrixRankTest
-from patternlab.plugins.longest_run import LongestRunOnesTest
+from patternanalyzer.engine import Engine
+from patternanalyzer.plugins.vigenere import VigenerePlugin
+from patternanalyzer.plugins.xor_const import XOPlugin
+from patternanalyzer.plugins.monobit import MonobitTest
+from patternanalyzer.plugins.cusum import CumulativeSumsTest
+from patternanalyzer.plugins.binary_matrix_rank import BinaryMatrixRankTest
+from patternanalyzer.plugins.longest_run import LongestRunOnesTest
 
 class FakeEP:
     def __init__(self, name, cls):
@@ -17,7 +17,7 @@ class FakeEP:
         return self._cls
 
 def fake_entry_points(group=None):
-    if group == 'patternlab.plugins':
+    if group == 'patternanalyzer.plugins':
         return [
             FakeEP('vigenere', VigenerePlugin),
             FakeEP('xor_const', XOPlugin),
@@ -43,7 +43,7 @@ def test_entrypoint_discovery(monkeypatch):
 
 def test_entrypoint_discovery_e2e():
     # End-to-end test using the real installed entry points (requires editable install)
-    eps = im.entry_points(group='patternlab.plugins')
+    eps = im.entry_points(group='patternanalyzer.plugins')
     if not eps:
         pytest.skip("No entry points installed in environment")
     e = Engine()

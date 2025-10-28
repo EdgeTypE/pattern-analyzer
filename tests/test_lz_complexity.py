@@ -1,6 +1,6 @@
 import os
-from patternlab.plugin_api import BytesView
-from patternlab.plugins.lz_complexity import LZComplexityTest
+from patternanalyzer.plugin_api import BytesView
+from patternanalyzer.plugins.lz_complexity import LZComplexityTest
 
 def test_lz_complexity_low_for_repeated():
     # Highly repetitive data should yield a low normalized complexity score

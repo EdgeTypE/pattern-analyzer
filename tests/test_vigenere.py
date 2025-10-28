@@ -1,5 +1,5 @@
-from patternlab.plugins.vigenere import VigenerePlugin
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugins.vigenere import VigenerePlugin
+from patternanalyzer.plugin_api import BytesView
 
 def test_vigenere_encrypt_decrypt():
     p = VigenerePlugin()

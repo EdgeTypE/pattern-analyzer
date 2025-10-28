@@ -1,1 +1,0 @@
-"""PatternLab plugins package."""

@@ -5,13 +5,13 @@ This test uses a deterministic byte sequence so outputs are reproducible.
 """
 
 import time
-from patternlab.plugin_api import BytesView, TestResult
-from patternlab.plugins.diehard_birthday_spacings import BirthdaySpacingsTest
-from patternlab.plugins.diehard_overlapping_sums import OverlappingSumsTest
-from patternlab.plugins.diehard_3d_spheres import ThreeDSpheresTest
-from patternlab.plugins.testu01_smallcrush import SmallCrushAdapter
-from patternlab.plugins.dft_spectral_advanced import DFTSpectralAdvancedTest
-from patternlab.plugins.hurst_exponent import HurstExponentTest
+from patternanalyzer.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.diehard_birthday_spacings import BirthdaySpacingsTest
+from patternanalyzer.plugins.diehard_overlapping_sums import OverlappingSumsTest
+from patternanalyzer.plugins.diehard_3d_spheres import ThreeDSpheresTest
+from patternanalyzer.plugins.testu01_smallcrush import SmallCrushAdapter
+from patternanalyzer.plugins.dft_spectral_advanced import DFTSpectralAdvancedTest
+from patternanalyzer.plugins.hurst_exponent import HurstExponentTest
 
 
 def _deterministic_bytes(length=4096):

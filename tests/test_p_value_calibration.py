@@ -1,5 +1,5 @@
 import os
-from patternlab.validation import p_value_calibration as pvc
+from patternanalyzer.validation import p_value_calibration as pvc
 
 
 def test_calibrate_defaults_and_csv(tmp_path):

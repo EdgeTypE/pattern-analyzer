@@ -1,6 +1,6 @@
 # Configuration Examples
 
-This directory contains example configuration files for PatternLab in both `JSON` and `YAML` formats. These files demonstrate how to customize an analysis pipeline.
+This directory contains example configuration files for Pattern Analyzer in both `JSON` and `YAML` formats. These files demonstrate how to customize an analysis pipeline.
 
 ## Files
 
@@ -25,8 +25,8 @@ You can run an analysis using one of the example configuration files like this:
 
 ```bash
 # Using the YAML configuration
-patternlab analyze my_data.bin --config docs/configs/example.yml
+patternanalyzer analyze my_data.bin --config docs/configs/example.yml
 
 # Using the JSON configuration
-patternlab analyze my_data.bin --config docs/configs/example.json
+patternanalyzer analyze my_data.bin --config docs/configs/example.json
 ```

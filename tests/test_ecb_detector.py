@@ -1,6 +1,6 @@
 import os
-from patternlab.plugin_api import BytesView, TestResult
-from patternlab.plugins.ecb_detector import ECBDetector
+from patternanalyzer.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.ecb_detector import ECBDetector
 
 
 def test_run_detects_ecb_repeating_blocks():

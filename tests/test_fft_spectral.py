@@ -1,8 +1,8 @@
 import sys
 import types
 import pytest
-from patternlab.plugin_api import BytesView
-from patternlab.plugins.fft_spectral import FFTSpectralTest, NAIVE_DFT_BIT_LIMIT
+from patternanalyzer.plugin_api import BytesView
+from patternanalyzer.plugins.fft_spectral import FFTSpectralTest, NAIVE_DFT_BIT_LIMIT
 
 def test_fft_spectral_basic_metrics():
     # Create a repeating pattern that produces a strong spectral peak (01010101 ...)

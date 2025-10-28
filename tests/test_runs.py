@@ -1,8 +1,8 @@
 """Unit tests for RunsTest plugin (Wald–Wolfowitz)."""
 
 import pytest
-from patternlab.plugins.runs_test import RunsTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.runs_test import RunsTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestRunsTest:

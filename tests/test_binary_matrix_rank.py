@@ -2,8 +2,8 @@
 
 import random
 import pytest
-from patternlab.plugins.binary_matrix_rank import BinaryMatrixRankTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.binary_matrix_rank import BinaryMatrixRankTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestBinaryMatrixRank:

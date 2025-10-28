@@ -1,6 +1,6 @@
 import pytest
-from patternlab.engine import Engine
-from patternlab.plugin_api import TestPlugin, TestResult, BytesView
+from patternanalyzer.engine import Engine
+from patternanalyzer.plugin_api import TestPlugin, TestResult, BytesView
 
 
 class FakeTest(TestPlugin):
@@ -71,7 +71,7 @@ def test_scorecard_mean_effect_and_distribution():
     hist = sc['p_value_distribution']['histogram']
     assert sum(hist.values()) == sc['p_value_distribution']['count']
 def test_linear_complexity_excluded_from_fdr():
-    from patternlab.plugins.linear_complexity import LinearComplexityTest
+    from patternanalyzer.plugins.linear_complexity import LinearComplexityTest
 
     e = Engine()
     # register the real linear_complexity plugin (diagnostic) and a significant fake test
@@ -94,7 +94,7 @@ def test_linear_complexity_excluded_from_fdr():
     assert out['scorecard']['failed_tests'] == 1
 def test_plugin_categories_and_fdr_scope():
     """Mini-test: diagnostic plugins must have p_value=None and be excluded from FDR; statistical ones included."""
-    from patternlab.plugins import autocorrelation, fft_spectral, linear_complexity, monobit, block_frequency_test
+    from patternanalyzer.plugins import autocorrelation, fft_spectral, linear_complexity, monobit, block_frequency_test
 
     e = Engine()
     e.register_test('autocorrelation', autocorrelation.AutocorrelationTest())

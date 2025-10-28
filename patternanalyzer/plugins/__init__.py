@@ -1,0 +1,1 @@
+"""Pattern Analyzer plugins package."""

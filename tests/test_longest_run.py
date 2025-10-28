@@ -1,8 +1,8 @@
 """Tests for Longest Run of Ones in a Block plugin."""
 
 import math
-from patternlab.plugins.longest_run import LongestRunOnesTest, _TABLES
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.longest_run import LongestRunOnesTest, _TABLES
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestLongestRunOnes:

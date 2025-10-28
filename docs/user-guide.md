@@ -1,15 +1,15 @@
 # User Guide
 
-This guide provides a more in-depth look at how to use PatternLab's various features and interfaces.
+This guide provides a more in-depth look at how to use Pattern Analyzer's various features and interfaces.
 
 ## 1. Command-Line Interface (CLI)
 
-The `patternlab` CLI is the primary tool for automated analysis. The main command is `analyze`.
+The `patternanalyzer` CLI is the primary tool for automated analysis. The main command is `analyze`.
 
 ### Basic Usage
 
 ```bash
-patternlab analyze <input_file> [options]
+patternanalyzer analyze <input_file> [options]
 ```
 
 ### Key Options
@@ -22,7 +22,7 @@ patternlab analyze <input_file> [options]
 
 **Example with a profile and HTML report:**
 ```bash
-patternlab analyze suspicious.dat --profile crypto --html-report report.html
+patternanalyzer analyze suspicious.dat --profile crypto --html-report report.html
 ```
 
 ## 2. Configuration Files
@@ -57,7 +57,7 @@ fdr_q: 0.05 # False Discovery Rate significance level (q-value)
 
 To use this file:
 ```bash
-patternlab analyze my_file.bin --config config.yml
+patternanalyzer analyze my_file.bin --config config.yml
 ```
 
 ## 3. Web User Interface (Streamlit)
@@ -70,7 +70,7 @@ streamlit run app.py
 ```
 Or, if `[ui]` extras are installed:
 ```bash
-patternlab serve-ui
+patternanalyzer serve-ui
 ```
 
 Navigate to the URL shown in your terminal to access the interface.

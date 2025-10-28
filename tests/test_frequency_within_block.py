@@ -1,7 +1,7 @@
 import random
 import pytest
-from patternlab.plugins.frequency_within_block import FrequencyWithinBlockTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.frequency_within_block import FrequencyWithinBlockTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 def bits_to_bytes(bits):
     pad = (-len(bits)) % 8

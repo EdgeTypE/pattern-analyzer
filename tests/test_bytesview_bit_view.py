@@ -1,4 +1,4 @@
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugin_api import BytesView
 import pytest
 import builtins
 

@@ -1,17 +1,17 @@
 # API Reference
 
-This page provides a reference for the programmatic use of the PatternLab Python API. It is intended for developers who want to integrate PatternLab's analysis capabilities into their own applications.
+This page provides a reference for the programmatic use of the Pattern Analyzer Python API. It is intended for developers who want to integrate Pattern Analyzer's analysis capabilities into their own applications.
 
 ## Core Components
 
-The API revolves around a few key classes defined in `patternlab.engine` and `patternlab.plugin_api`.
+The API revolves around a few key classes defined in `patternanalyzer.engine` and `patternanalyzer.plugin_api`.
 
 ### `Engine`
 
 The `Engine` class is the main entry point for all analysis tasks.
 
 ```python
-from patternlab.engine import Engine
+from patternanalyzer.engine import Engine
 
 # Initialize the engine. This automatically discovers installed plugins.
 engine = Engine()
@@ -57,7 +57,7 @@ Returns a list of names of all registered test plugins.
 A memory-efficient wrapper for binary data passed to plugins. It's the primary data type used within the `run` method of plugins.
 
 ```python
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugin_api import BytesView
 
 data = BytesView(b'\xAA\xBB\xCC')
 
@@ -74,7 +74,7 @@ bits = data.bit_view()
 A dataclass used by `TestPlugin` instances to return their findings.
 
 ```python
-from patternlab.plugin_api import TestResult
+from patternanalyzer.plugin_api import TestResult
 
 # Example of creating a TestResult within a plugin
 result = TestResult(
@@ -90,7 +90,7 @@ result = TestResult(
 This example demonstrates initializing the engine, defining a custom analysis pipeline, and running the analysis.
 
 ```python
-from patternlab.engine import Engine
+from patternanalyzer.engine import Engine
 import json
 import os
 

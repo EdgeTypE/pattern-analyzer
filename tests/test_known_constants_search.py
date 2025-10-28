@@ -1,5 +1,5 @@
-from patternlab.plugin_api import BytesView, TestResult
-from patternlab.plugins.known_constants_search import KnownConstantsSearch, AES_SBOX
+from patternanalyzer.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.known_constants_search import KnownConstantsSearch, AES_SBOX
 
 
 def test_detects_aes_sbox_in_header():

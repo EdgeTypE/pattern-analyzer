@@ -1,8 +1,8 @@
 """Tests for Cumulative Sums (Cusum) test plugin."""
 
 import pytest
-from patternlab.plugins.cusum import CumulativeSumsTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.cusum import CumulativeSumsTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestCumulativeSums:

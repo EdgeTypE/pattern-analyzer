@@ -1,8 +1,8 @@
 """Tests for XOR constant transform plugin."""
 
 import pytest
-from patternlab.plugins.xor_const import XOPlugin
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugins.xor_const import XOPlugin
+from patternanalyzer.plugin_api import BytesView
 
 
 class TestXOPlugin:

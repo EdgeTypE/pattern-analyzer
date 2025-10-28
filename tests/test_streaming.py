@@ -1,6 +1,6 @@
 import math
 import random
-from patternlab.engine import Engine
+from patternanalyzer.engine import Engine
 
 def _find_result(results, name):
     for r in results:

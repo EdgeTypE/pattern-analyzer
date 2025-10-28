@@ -1,6 +1,6 @@
 import pytest
-from patternlab.plugin_api import BytesView, TestResult
-from patternlab.plugins.linear_complexity import LinearComplexityTest
+from patternanalyzer.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.linear_complexity import LinearComplexityTest
 
 def test_linear_complexity_simple():
     # sequence of alternating bits has low linear complexity relative to length

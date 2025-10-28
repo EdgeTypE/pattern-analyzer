@@ -1,6 +1,6 @@
 import os
-from patternlab.plugin_api import BytesView, TestResult
-from patternlab.plugins.frequency_pattern import FrequencyPattern
+from patternanalyzer.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.frequency_pattern import FrequencyPattern
 
 
 def test_run_detects_vigenere_like_ioc():

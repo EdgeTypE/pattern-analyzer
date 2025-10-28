@@ -17,7 +17,7 @@ def get_entry_points(group):
 
 
 def test_entry_points_e2e():
-    eps = get_entry_points("patternlab.plugins")
+    eps = get_entry_points("patternanalyzer.plugins")
     if not eps:
         pytest.skip("No entry points installed in environment")
     names = {getattr(ep, "name", None) for ep in eps}
@@ -38,12 +38,12 @@ def test_entry_points_monkeypatched(monkeypatch):
             self.name = name
 
     def fake_entry_points(group=None):
-        if group == "patternlab.plugins":
+        if group == "patternanalyzer.plugins":
             return [FakeEP("vigenere"), FakeEP("xor_const"), FakeEP("monobit")]
         return []
 
     monkeypatch.setattr(im, "entry_points", fake_entry_points)
-    eps = get_entry_points("patternlab.plugins")
+    eps = get_entry_points("patternanalyzer.plugins")
     names = {ep.name for ep in eps}
     assert "vigenere" in names
     assert "xor_const" in names

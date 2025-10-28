@@ -1,8 +1,8 @@
 import random
 import pytest
 
-from patternlab.plugins.maurers_universal import MaurersUniversalTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.maurers_universal import MaurersUniversalTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 def bits_to_bytes(bits):

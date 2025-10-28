@@ -1,7 +1,7 @@
 import math
 import random
-from patternlab.plugins.conditional_entropy import ConditionalEntropyTest
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugins.conditional_entropy import ConditionalEntropyTest
+from patternanalyzer.plugin_api import BytesView
 
 def _chunks(data: bytes, size: int):
     for i in range(0, len(data), size):

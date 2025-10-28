@@ -1,6 +1,6 @@
 import pytest
-from patternlab.plugin_api import BytesView
-from patternlab.plugins.dotplot import DotplotTest
+from patternanalyzer.plugin_api import BytesView
+from patternanalyzer.plugins.dotplot import DotplotTest
 
 def test_dotplot_detects_repeats():
     # Create data with a long repeated region (A...) followed by different bytes (B...)

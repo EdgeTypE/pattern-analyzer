@@ -1,7 +1,7 @@
 import pytest
 import json
-from patternlab.engine import Engine
-from patternlab.plugin_api import TransformPlugin, TestPlugin, VisualPlugin, TestResult
+from patternanalyzer.engine import Engine
+from patternanalyzer.plugin_api import TransformPlugin, TestPlugin, VisualPlugin, TestResult
 
 
 class BadTransform(TransformPlugin):

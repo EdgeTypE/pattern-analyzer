@@ -1,10 +1,10 @@
 # Plugin Developer Guide
 
-PatternLab's power comes from its extensible plugin architecture. This guide explains how to create your own plugins.
+Pattern Analyzer's power comes from its extensible plugin architecture. This guide explains how to create your own plugins.
 
 ## Core Concepts
 
-There are three types of plugins, all inheriting from base classes defined in `patternlab/plugin_api.py`:
+There are three types of plugins, all inheriting from base classes defined in `patternanalyzer/plugin_api.py`:
 
 1.  **`TransformPlugin`**: Modifies the input data before it is passed to the test plugins. Examples include XORing, decoding, or decryption.
 2.  **`TestPlugin`**: The core analysis unit. It inspects the data and returns a `TestResult` object with findings.
@@ -21,10 +21,10 @@ Let's create a new `TestPlugin` that checks if the data consists entirely of nul
 
 1.  **Create the Plugin File**
 
-    Create a new file `patternlab/plugins/all_zeros.py`:
+    Create a new file `patternanalyzer/plugins/all_zeros.py`:
 
     ```python
-    from patternlab.plugin_api import TestPlugin, TestResult, BytesView
+    from patternanalyzer.plugin_api import TestPlugin, TestResult, BytesView
 
     class AllZerosTest(TestPlugin):
         """A simple diagnostic test to check for all-zero data."""
@@ -55,12 +55,12 @@ Let's create a new `TestPlugin` that checks if the data consists entirely of nul
 
 2.  **Register the Plugin**
 
-    The easiest way to make your plugin discoverable is by adding an entry point to `pyproject.toml` under the `[project.entry-points."patternlab.plugins"]` section.
+    The easiest way to make your plugin discoverable is by adding an entry point to `pyproject.toml` under the `[project.entry-points."patternanalyzer.plugins"]` section.
 
     ```toml
     # In pyproject.toml
-    [project.entry-points."patternlab.plugins"]
-    all_zeros = "patternlab.plugins.all_zeros:AllZerosTest"
+    [project.entry-points."patternanalyzer.plugins"]
+    all_zeros = "patternanalyzer.plugins.all_zeros:AllZerosTest"
     # ... other plugins
     ```
 
@@ -68,7 +68,7 @@ Let's create a new `TestPlugin` that checks if the data consists entirely of nul
     ```bash
     pip install -e .
     ```
-    The PatternLab engine will now automatically discover and register your new plugin at startup.
+    The Pattern Analyzer engine will now automatically discover and register your new plugin at startup.
 
 ## Supporting Streaming Analysis
 
@@ -77,15 +77,15 @@ For plugins that can process data in chunks, you can implement the streaming API
 - **`update(self, chunk: bytes, params: dict)`**: This method is called for each chunk of data from the stream. Your plugin should update its internal state here.
 - **`finalize(self, params: dict) -> TestResult`**: Called after all chunks have been processed. This method should compute the final result based on the accumulated state and then reset the state for the next run.
 
-See `patternlab/plugins/monobit.py` for a simple example of a test that supports both batch (`run`) and streaming (`update`/`finalize`) modes.
+See `patternanalyzer/plugins/monobit.py` for a simple example of a test that supports both batch (`run`) and streaming (`update`/`finalize`) modes.
 
 ## Writing Unit Tests
 
 It's crucial to write tests for your new plugin. Add a new test file in the `tests/` directory, for example, `tests/test_all_zeros.py`.
 
 ```python
-from patternlab.plugins.all_zeros import AllZerosTest
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugins.all_zeros import AllZerosTest
+from patternanalyzer.plugin_api import BytesView
 
 def test_all_zeros_positive():
     plugin = AllZerosTest()

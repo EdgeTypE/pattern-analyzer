@@ -1,8 +1,8 @@
-site_name: PatternLab Documentation
-site_description: "Kapsamlı dokümantasyon sitesi"
-site_author: PatternLab
-repo_url: https://github.com/<owner>/pattern-analyzer
-site_url: https://<owner>.github.io/pattern-analyzer
+site_name: Pattern Analyzer Documentation
+site_description: "Documentation for Pattern Analyzer, a binary pattern analysis framework."
+site_author: EdgeTypE
+repo_url: https://github.com/EdgeTypE/pattern-analyzer
+site_url: https://EdgeTypE.github.io/pattern-analyzer
 nav:
   - Home: index.md
   - Getting Started: getting-started.md

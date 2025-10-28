@@ -2,9 +2,9 @@ import streamlit as st
 import base64
 import pandas as pd
 import json
-from patternlab.engine import Engine
+from patternanalyzer.engine import Engine
 
-st.set_page_config(page_title="PatternLab Analizi", layout="wide", page_icon="🔬")
+st.set_page_config(page_title="Pattern Analyzer Analizi", layout="wide", page_icon="🔬")
 
 engine = Engine()
 
@@ -50,10 +50,10 @@ def main():
     # Language support
     if 'language' not in st.session_state:
         st.session_state.language = "tr"
-
+    # TO DO (P3): Load language strings from an external file
     lang = {
         "tr": {
-            "main_title": "🔬 PatternLab Analiz Platformu",
+            "main_title": "🔬 Pattern Analyzer Analiz Platformu",
             "main_desc": "Bu platform, verilerinizde rastgelelik paternlerini analiz etmek için güçlü istatistiksel testler sunar. Dosya yükleyin veya doğrudan veri girin ve kapsamlı bir analiz raporu elde edin.",
             "results_title": "📊 Analiz Sonuçları",
             "control_panel": "⚙️ Kontrol Paneli",
@@ -161,7 +161,7 @@ def main():
             }
         },
         "en": {
-            "main_title": "🔬 PatternLab Analysis Platform",
+            "main_title": "🔬 Pattern Analyzer Analysis Platform",
             "main_desc": "This platform offers powerful statistical tests to analyze randomness patterns in your data. Upload a file or enter data directly and get a comprehensive analysis report.",
             "results_title": "📊 Analysis Results",
             "control_panel": "⚙️ Control Panel",

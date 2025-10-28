@@ -1,8 +1,8 @@
 """Unit tests for Random Excursions plugin (simplified)."""
 
 import pytest
-from patternlab.plugins.random_excursions import RandomExcursionsTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.random_excursions import RandomExcursionsTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestRandomExcursions:

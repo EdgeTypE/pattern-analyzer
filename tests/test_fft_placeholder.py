@@ -1,6 +1,6 @@
 import pytest
-from patternlab.plugins.fft_placeholder import FFTPlaceholder
-from patternlab.plugin_api import TestResult
+from patternanalyzer.plugins.fft_placeholder import FFTPlaceholder
+from patternanalyzer.plugin_api import TestResult
 
 def test_fft_placeholder_renders_svg_from_metrics():
     result = TestResult(test_name="fft", passed=True, p_value=0.5, metrics={"f1": 1.0, "f2": 2.0})

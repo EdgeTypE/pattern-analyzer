@@ -1,6 +1,6 @@
-# PatternLab
+# Pattern Analyzer
 
-PatternLab is a comprehensive, plugin-based framework for binary data analysis in Python. It provides a powerful engine to apply statistical tests, cryptographic analysis, and structural format detection on any binary data source.
+Pattern Analyzer is a comprehensive, plugin-based framework for binary data analysis in Python. It provides a powerful engine to apply statistical tests, cryptographic analysis, and structural format detection on any binary data source.
 
 ## Features
 
@@ -10,16 +10,16 @@ PatternLab is a comprehensive, plugin-based framework for binary data analysis i
   - **Cryptographic Analysis**: Detects ECB mode encryption, repeating-key XOR patterns, and searches for known constants like AES S-boxes.
   - **Structural Analysis**: Basic parsers for formats like ZIP, PNG, and PDF.
   - **Machine Learning**: Anomaly detection using Autoencoders, LSTMs, and pre-trained classifiers.
-- **Multiple Interfaces**: Use PatternLab the way you want:
+- **Multiple Interfaces**: Use Pattern Analyzer the way you want:
   - **Command-Line Interface (CLI)** for scripting and automation.
   - **Web User Interface (Streamlit)** for interactive analysis and visualization.
   - **Text-based User Interface (TUI)** for terminal-based interaction.
-  - **REST API (FastAPI)** to integrate PatternLab into other services.
+  - **REST API (FastAPI)** to integrate Pattern Analyzer into other services.
 - **High-Performance Engine**: Supports parallel test execution, streaming analysis for large files, and sandboxed plugin execution for security and stability.
 
 ## Installation
 
-It is recommended to install PatternLab in a virtual environment.
+It is recommended to install Pattern Analyzer in a virtual environment.
 
 ```bash
 # Clone the repository
@@ -46,13 +46,13 @@ The optional dependencies are:
 Analyze a binary file using a default set of tests and save the report.
 
 ```bash
-patternlab analyze test.bin --out report.json
+patternanalyzer analyze test.bin --out report.json
 ```
 
 Use a specific configuration profile for a focused analysis (e.g., cryptographic tests).
 
 ```bash
-patternlab analyze encrypted.bin --profile crypto --out crypto_report.json
+patternanalyzer analyze encrypted.bin --profile crypto --out crypto_report.json
 ```
 
 ### Python API
@@ -60,7 +60,7 @@ patternlab analyze encrypted.bin --profile crypto --out crypto_report.json
 Programmatically run an analysis pipeline.
 
 ```python
-from patternlab.engine import Engine
+from patternanalyzer.engine import Engine
 
 # Initialize the analysis engine
 engine = Engine()
@@ -89,7 +89,7 @@ print(json.dumps(output, indent=2))
 
 ```
 pattern-analyzer/
-├── patternlab/               # Main source code for the framework
+├── patternanalyzer/               # Main source code for the framework
 │   ├── plugins/              # Built-in analysis and transform plugins
 │   ├── __init__.py
 │   ├── engine.py             # The core analysis engine

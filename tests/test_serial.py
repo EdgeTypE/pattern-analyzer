@@ -1,8 +1,8 @@
 """Unit tests for SerialTest plugin."""
 
 import pytest
-from patternlab.plugins.serial_test import SerialTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.serial_test import SerialTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestSerialTest:

@@ -1,7 +1,7 @@
 import random
 
-from patternlab.plugins.overlapping_template_matching import OverlappingTemplateMatching
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.overlapping_template_matching import OverlappingTemplateMatching
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 def bits_to_bytes(bits):
     """Pack list of bits (0/1) MSB-first per byte into bytes object."""

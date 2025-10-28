@@ -1,5 +1,5 @@
-from patternlab.plugins.classifier_labeler import ClassifierLabelerPlugin
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugins.classifier_labeler import ClassifierLabelerPlugin
+from patternanalyzer.plugin_api import BytesView
 
 def test_classifier_labeler_stub_batch():
     data = bytes([i % 256 for i in range(1024)])

@@ -1,6 +1,6 @@
 import json
-from patternlab.engine import Engine
-from patternlab.plugin_api import TestPlugin, TestResult
+from patternanalyzer.engine import Engine
+from patternanalyzer.plugin_api import TestPlugin, TestResult
 
 def test_report_meta_contains_extended_fields(tmp_path):
     engine = Engine()

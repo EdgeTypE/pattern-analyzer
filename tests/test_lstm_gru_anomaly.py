@@ -1,5 +1,5 @@
-from patternlab.plugins.lstm_gru_anomaly import LSTMGRUAnomalyPlugin
-from patternlab.plugin_api import BytesView
+from patternanalyzer.plugins.lstm_gru_anomaly import LSTMGRUAnomalyPlugin
+from patternanalyzer.plugin_api import BytesView
 
 def test_lstm_stub_batch():
     data = bytes([i % 256 for i in range(1024)])

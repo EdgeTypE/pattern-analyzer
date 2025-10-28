@@ -5,7 +5,7 @@ import subprocess
 
 def test_bench_calibrate_creates_artifacts(tmp_path):
     outdir = tmp_path / "bench_out"
-    cmd = [sys.executable, "-m", "patternlab.cli", "bench", "--calibrate", "--samples", "50", "--seed", "1", "--out-dir", str(outdir), "--profile", "nist"]
+    cmd = [sys.executable, "-m", "patternanalyzer.cli", "bench", "--calibrate", "--samples", "50", "--seed", "1", "--out-dir", str(outdir), "--profile", "nist"]
     res = subprocess.run(cmd, capture_output=True, text=True)
     print(res.stdout)
     print(res.stderr, file=sys.stderr)

@@ -1,5 +1,5 @@
-from patternlab.plugin_api import BytesView
-from patternlab.plugins.binary_matrix_rank import BinaryMatrixRankTest
+from patternanalyzer.plugin_api import BytesView
+from patternanalyzer.plugins.binary_matrix_rank import BinaryMatrixRankTest
 
 def inspect_rows(m=8, num_matrices=1):
     bits_per_matrix = m * m

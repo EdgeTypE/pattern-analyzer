@@ -40,7 +40,7 @@ jobs:
         run: |
           ruff check .
           black --check .
-          mypy patternlab || true
+          mypy patternanalyzer || true
 
       - name: Run tests with coverage
         run: |

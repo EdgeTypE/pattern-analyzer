@@ -1,15 +1,15 @@
-# Welcome to PatternLab
+# Welcome to Pattern Analyzer
 
-This site provides comprehensive documentation for the PatternLab framework, covering user guides, API references, and plugin development.
+This site provides comprehensive documentation for the Pattern Analyzer framework, covering user guides, API references, and plugin development.
 
-PatternLab is a powerful, plugin-based framework designed for the analysis of binary data. Whether you're a security researcher, a data scientist, or a developer, PatternLab provides the tools to dissect binary files, detect patterns, and assess randomness through a suite of statistical and analytical tools.
+Pattern Analyzer is a powerful, plugin-based framework designed for the analysis of binary data. Whether you're a security researcher, a data scientist, or a developer, Pattern Analyzer provides the tools to dissect binary files, detect patterns, and assess randomness through a suite of statistical and analytical tools.
 
 ## Quick Navigation
 
-- **[Getting Started](./getting-started.md)**: A quick-start guide to install PatternLab and run your first analysis.
+- **[Getting Started](./getting-started.md)**: A quick-start guide to install Pattern Analyzer and run your first analysis.
 - **[User Guide](./user-guide.md)**: Detailed instructions on using the CLI, Web UI, and configuration files.
 - **[Plugin Developer Guide](./plugin-developer-guide.md)**: Learn how to create your own tests, transforms, and visualizers.
-- **[API Reference](./api-reference.md)**: A reference for using PatternLab programmatically in your own Python scripts.
+- **[API Reference](./api-reference.md)**: A reference for using Pattern Analyzer programmatically in your own Python scripts.
 - **[Test Reference](./test-reference.md)**: A detailed catalog of all built-in analysis plugins.
 - **[Configuration Examples](./configs/README.md)**: See examples of `YAML` and `JSON` configuration files.
 

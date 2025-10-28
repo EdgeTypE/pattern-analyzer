@@ -2,8 +2,8 @@
 
 import pytest
 import math
-from patternlab.plugins.monobit import MonobitTest
-from patternlab.plugin_api import BytesView, TestResult
+from patternanalyzer.plugins.monobit import MonobitTest
+from patternanalyzer.plugin_api import BytesView, TestResult
 
 
 class TestMonobitTest:

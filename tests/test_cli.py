@@ -11,7 +11,7 @@ def test_cli_outputs_valid_json(tmp_path):
 
     # CLI'yı modül olarak çalıştır
     completed = subprocess.run(
-        [sys.executable, "-m", "patternlab.cli", "analyze", str(input_file), "-o", str(output_file)],
+        [sys.executable, "-m", "patternanalyzer.cli", "analyze", str(input_file), "-o", str(output_file)],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -40,7 +40,7 @@ def test_cli_accepts_default_visuals_and_artefact_dir(tmp_path):
     default_visuals = '{"fft_placeholder": {"mime": "image/svg+xml"}}'
 
     completed = subprocess.run(
-        [sys.executable, "-m", "patternlab.cli", "analyze", str(input_file), "-o", str(output_file),
+        [sys.executable, "-m", "patternanalyzer.cli", "analyze", str(input_file), "-o", str(output_file),
          "--default-visuals", default_visuals, "--artefact-dir", str(artefacts)],
         check=True,
         stdout=subprocess.PIPE,
@@ -66,7 +66,7 @@ def test_cli_writes_html_report(tmp_path):
     html_file = tmp_path / "report.html"
 
     completed = subprocess.run(
-        [sys.executable, "-m", "patternlab.cli", "analyze", str(input_file), "-o", str(output_file),
+        [sys.executable, "-m", "patternanalyzer.cli", "analyze", str(input_file), "-o", str(output_file),
          "--html-report", str(html_file)],
         check=True,
         stdout=subprocess.PIPE,
@@ -77,7 +77,7 @@ def test_cli_writes_html_report(tmp_path):
     assert html_file.exists(), f"Expected html report {html_file} to exist; stdout: {completed.stdout.decode()}; stderr: {completed.stderr.decode()}"
 
     html_text = html_file.read_text(encoding="utf-8")
-    assert "<h1>PatternLab Report" in html_text
+    assert "<h1>Pattern Analyzer Report" in html_text
     assert "Summary" in html_text and "Results" in html_text
 def test_cli_artefact_dir_writes_files_and_html_refs(tmp_path):
     input_file = tmp_path / "input4.bin"
@@ -88,7 +88,7 @@ def test_cli_artefact_dir_writes_files_and_html_refs(tmp_path):
     default_visuals = '{"fft_placeholder": {"mime": "image/svg+xml"}}'
 
     completed = subprocess.run(
-        [sys.executable, "-m", "patternlab.cli", "analyze", str(input_file), "-o", str(output_file),
+        [sys.executable, "-m", "patternanalyzer.cli", "analyze", str(input_file), "-o", str(output_file),
          "--default-visuals", default_visuals, "--artefact-dir", str(artefacts), "--html-report", str(html_file)],
         check=True,
         stdout=subprocess.PIPE,

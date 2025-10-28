@@ -13,7 +13,7 @@ def get_eps(group):
         return []
 
 def main():
-    group = "patternlab.plugins"
+    group = "patternanalyzer.plugins"
     eps = get_eps(group)
     print(f"found {len(eps)} entry points in group '{group}'")
     for ep in eps:

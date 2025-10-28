@@ -1,7 +1,7 @@
 import json
 import random
-from patternlab.plugin_api import BytesView
-from patternlab.plugins.nist_dft_spectral import NISTDFTSpectralTest
+from patternanalyzer.plugin_api import BytesView
+from patternanalyzer.plugins.nist_dft_spectral import NISTDFTSpectralTest
 
 def run_checks():
     plugin = NISTDFTSpectralTest()

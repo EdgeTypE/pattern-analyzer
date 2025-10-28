@@ -1,6 +1,6 @@
 import pytest
-from patternlab.plugin_api import BytesView
-from patternlab.plugins.autocorrelation import AutocorrelationTest
+from patternanalyzer.plugin_api import BytesView
+from patternanalyzer.plugins.autocorrelation import AutocorrelationTest
 
 def test_autocorrelation_basic():
     # Construct a periodic bit pattern (01010101...) which should show strong lag-1 correlation
