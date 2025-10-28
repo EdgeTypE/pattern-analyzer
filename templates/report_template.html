@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Pattern Analyzer Analiz Raporu</title>
+  <title>Pattern Analyzer Analysis Report</title>
 
-  <!-- Bootstrap 5 ve Simgeler -->
+  <!-- Bootstrap 5 and Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
@@ -26,31 +26,31 @@
 <body>
   <div class="container py-4">
     <header class="pb-3 mb-4 border-bottom">
-      <h1 class="h3">Pattern Analyzer Analiz Raporu</h1>
-      <p class="text-muted mb-0">Oluşturma Zamanı: <span class="small-mono">{{ meta.get("generated_at", "N/A") }}</span></p>
+      <h1 class="h3">Pattern Analyzer Analysis Report</h1>
+      <p class="text-muted mb-0">Generation Time: <span class="small-mono">{{ meta.get("generated_at", "N/A") }}</span></p>
     </header>
 
     <section id="analysis-summary" class="card p-3 mb-4">
-        <h5 class="card-title">Analiz Özeti</h5>
+        <h5 class="card-title">Analysis Summary</h5>
         {% set failed_count = scorecard.get("failed_tests", 0) %}
         {% if failed_count > 0 %}
             <div class="alert alert-warning" role="alert">
-                <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Potansiyel Anormallikler Tespit Edildi!</h4>
-                <p>Toplam <strong>{{ scorecard.get("total_tests", 0) }}</strong> testten <strong>{{ failed_count }}</strong> tanesi istatistiksel olarak anlamlı sapmalar gösterdi (FDR q={{ scorecard.get("fdr_q") }}). Bu durum, incelenen verinin tamamen rastgele olmayabileceğine işaret ediyor.</p>
+                <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Potential Anomalies Detected!</h4>
+                <p>Out of a total of <strong>{{ scorecard.get("total_tests", 0) }}</strong> tests, <strong>{{ failed_count }}</strong> showed statistically significant deviations (FDR q={{ scorecard.get("fdr_q") }}). This suggests that the analyzed data may not be entirely random.</p>
                 <hr>
-                <p class="mb-1"><strong>Başarısız Olan Testler:</strong></p>
+                <p class="mb-1"><strong>Failed Tests:</strong></p>
                 <ul>
                     {% for result in results %}
                         {% if result.fdr_rejected %}
-                            <li><strong>{{ result.test_name }}</strong>: Bu testin başarısız olması, genellikle verideki belirli bir yapıya işaret eder. Detaylı bilgi için tablodaki <i class="bi bi-question-circle-fill help-icon" data-plugin-key="{{ result.test_name }}"></i> ikonuna tıklayın.</li>
+                            <li><strong>{{ result.test_name }}</strong>: Failure in this test usually indicates a specific pattern in the data. For detailed information, click the <i class="bi bi-question-circle-fill help-icon" data-plugin-key="{{ result.test_name }}"></i> icon in the table.</li>
                         {% endif %}
                     {% endfor %}
                 </ul>
             </div>
         {% else %}
             <div class="alert alert-success" role="alert">
-                <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Anormallik Tespit Edilmedi</h4>
-                <p>Çalıştırılan <strong>{{ scorecard.get("total_tests", 0) }}</strong> testin hiçbiri, belirlenen anlamlılık düzeyinde istatistiksel bir anormallik göstermedi. Veri, bu testler kapsamında rastgele bir yapı sergilemektedir.</p>
+                <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> No Anomalies Detected</h4>
+                <p>None of the <strong>{{ scorecard.get("total_tests", 0) }}</strong> tests run showed statistical anomalies at the specified significance level. The data exhibits a random structure within the scope of these tests.</p>
             </div>
         {% endif %}
     </section>
@@ -61,11 +61,11 @@
           <h5 class="card-title">Scorecard</h5>
           <div class="d-flex align-items-center justify-content-around flex-wrap text-center">
             <div class="p-2">
-              <div class="text-muted small">BAŞARISIZ TESTLER</div>
+              <div class="text-muted small">FAILED TESTS</div>
               <div class="score-metric text-danger">{{ scorecard.get("failed_tests", 0) }}</div>
             </div>
             <div class="p-2">
-              <div class="text-muted small">TOPLAM TEST</div>
+              <div class="text-muted small">TOTAL TESTS</div>
               <div class="score-metric">{{ scorecard.get("total_tests", 0) }}</div>
             </div>
             <div class="p-2">
@@ -77,22 +77,22 @@
       </div>
       <div class="col-12 col-lg-6">
         <div class="card p-3 h-100">
-          <h5 class="card-title">P-Değeri Dağılımı</h5>
+          <h5 class="card-title">P-Value Distribution</h5>
           <div style="height: 150px;"><canvas id="pvalChart"></canvas></div>
         </div>
       </div>
     </section>
 
     <section class="card p-3 mb-4">
-      <h5 class="card-title mb-3">Detaylı Test Sonuçları</h5>
+      <h5 class="card-title mb-3">Detailed Test Results</h5>
       <div class="table-responsive">
         <table id="resultsTable" class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>Test Adı</th>
-              <th class="text-center">Sonuç</th>
-              <th>P-Değeri</th>
-              <th class="text-center">Detaylar</th>
+              <th>Test Name</th>
+              <th class="text-center">Result</th>
+              <th>P-Value</th>
+              <th class="text-center">Details</th>
             </tr>
           </thead>
           <tbody>
@@ -103,7 +103,7 @@
                 <i class="bi bi-question-circle-fill ms-2 help-icon" 
                    data-plugin-key="{{ result.test_name }}" 
                    data-bs-target="#details-{{ loop.index }}"
-                   title="Bu testin ne anlama geldiğini öğren"></i>
+                   title="Learn what this test means"></i>
               </td>
               <td class="text-center">
                 {% if result.status != 'completed' %}
@@ -117,7 +117,7 @@
               <td><span class="small-mono">{{ "%.4g" % result.p_value if result.p_value is not none else "N/A" }}</span></td>
               <td class="text-center">
                 <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}">
-                  <i class="bi bi-arrows-angle-expand"></i> Göster
+                  <i class="bi bi-arrows-angle-expand"></i> Show
                 </button>
               </td>
             </tr>
@@ -128,12 +128,12 @@
                     <div class="description-area mb-3 p-3 bg-white rounded border"></div>
                     <div class="row">
                         <div class="col-12 col-md-7">
-                            <h6>Metrikler</h6>
+                            <h6>Metrics</h6>
                             <pre class="small bg-white p-2 rounded border" style="max-height: 300px;">{{ result._lite_metrics | tojson(indent=2) }}</pre>
                         </div>
                         <div class="col-12 col-md-5">
                             {% if result.visuals %}
-                                <h6 class="mt-3 mt-md-0">Görsel</h6>
+                                <h6 class="mt-3 mt-md-0">Visual</h6>
                                 {% for vname, v in result.visuals.items() %}
                                     {% if v.data_base64 %}
                                         <img class="img-fluid rounded border" alt="{{ vname }}" src="data:{{ v.mime }};base64,{{ v.data_base64 }}" />
@@ -154,12 +154,12 @@
       </div>
     </section>
 
-    <!-- Meta Bilgileri (Açılır-kapanır) -->
+    <!-- Metadata (Collapsible) -->
     <div class="accordion" id="metaAccordion">
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMeta">
-              Çalışma Ortamı ve Meta Verileri
+              Runtime Environment and Metadata
             </button>
           </h2>
           <div id="collapseMeta" class="accordion-collapse collapse">
@@ -180,7 +180,7 @@
     </div>
   </div>
 
-  <!-- Script'ler -->
+  <!-- Scripts -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
@@ -200,13 +200,13 @@
           if (!detailsDiv) return;
 
           const descriptionArea = detailsDiv.querySelector('.description-area');
-          const d = descriptions[key] || { title: key, short: 'Bu test için bir açıklama bulunamadı.', long: '', remediation: '' };
+          const d = descriptions[key] || { title: key, short: 'No description found for this test.', long: '', remediation: '' };
           
           descriptionArea.innerHTML = `
             <h5 class="mb-2">${d.title}</h5>
-            <p class="mb-2"><strong>Ne Anlama Gelir?</strong> ${d.short}</p>
+            <p class="mb-2"><strong>What Does It Mean?</strong> ${d.short}</p>
             <p class="small text-muted">${d.long || ''}</p>
-            ${d.remediation ? `<p class="small"><strong>Öneri:</strong> ${d.remediation}</p>` : ''}
+            ${d.remediation ? `<p class="small"><strong>Suggestion:</strong> ${d.remediation}</p>` : ''}
           `;
           
           // Show the collapse area
@@ -220,9 +220,9 @@
       new Chart(pvalCtx, {
         type: 'bar',
         data: {
-          labels: ['< 0.01 (Anlamlı)', '0.01-0.05', '0.05-0.1', '> 0.1 (Anlamsız)'],
+          labels: ['< 0.01 (Significant)', '0.01-0.05', '0.05-0.1', '> 0.1 (Insignificant)'],
           datasets: [{
-            label: 'P-Değeri Sayısı',
+            label: 'P-Value Count',
             data: pHistData,
             backgroundColor: ['#d9534f', '#f0ad4e', '#5bc0de', '#5cb85c'],
           }]

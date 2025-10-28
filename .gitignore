@@ -185,3 +185,5 @@ report.json
 report.html
 report.json
 /bench_results
+crypto_report.html
+crypto_report.json

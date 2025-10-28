@@ -1,5 +1,5 @@
-"""patternanalyzer.tui — Basit Textual TUI uygulaması."""
- 
+"""patternanalyzer.tui — Simple Textual TUI application."""
+
 from typing import Optional
 from textual.app import App, ComposeResult
 # ScrollView API moved between textual versions; try importing from widgets first,
@@ -27,15 +27,15 @@ from patternanalyzer.engine import Engine
 import json
 
 class PatternAnalyzerTUI(App):
-    """Textual.app tabanlı basit uygulama.
- 
-    Bu arayüz sadece istenen widget'ları sağlar:
-    - Dosya seçimi için DirectoryTree
-    - Çalıştırılacak testleri seçmek için Checkbox'lar (engine.get_available_tests())
-    - Başlat ve Çıkış için Button'lar
-    - Analiz sonuçları için DataTable ve tıklanabilir sonuç listesi (modal ile metrik gösterimi)
+    """Simple application based on Textual.app.
+
+    This interface only provides the required widgets:
+    - DirectoryTree for file selection
+    - Checkboxes for selecting tests to run (engine.get_available_tests())
+    - Start and Exit buttons
+    - DataTable for analysis results and clickable results list (modal for metric display)
     """
- 
+
     CSS = """
     #body { height: 1fr; }
     #left { width: 50%; min-width: 30; }
@@ -47,59 +47,59 @@ class PatternAnalyzerTUI(App):
     #results_table { height: 1fr; border: round $accent; padding: 1; }
     #results_scroll { height: 10; border: round $accent; padding: 1; }
     """
- 
+
     def compose(self) -> ComposeResult:
-        """Bileşenleri oluştur."""
+        """Compose the components."""
         yield Header()
         with Container(id="body"):
             with Horizontal():
-                # Sol: dosya ağacı / seçici
+                # Left: file tree / selector
                 yield Vertical(
-                    Static("Dosya seçimi", id="file_label"),
+                    Static("File Selection", id="file_label"),
                     DirectoryTree(".", id="file_tree"),
                     id="left",
                 )
-                # Sağ: test listesi, sonuçlar ve kontrol düğmeleri
+                # Right: test list, results, and control buttons
                 yield Vertical(
-                    Static("Mevcut Testler (Checkbox ile seçin)", id="tests_label"),
+                    Static("Available Tests (Select with Checkboxes)", id="tests_label"),
                     ScrollView(id="tests_scroll"),
                     Static("Scorecard", id="score_label"),
                     Static("", id="scorecard", expand=False),
-                    Static("Sonuçlar (tablo)", id="results_label"),
+                    Static("Results (Table)", id="results_label"),
                     DataTable(id="results_table"),
-                    Static("Tıklanabilir sonuç listesi", id="results_list_label"),
+                    Static("Clickable Results List", id="results_list_label"),
                     ScrollView(id="results_scroll"),
-                    Static("", id="status", expand=False),  # Status mesajları için
+                    Static("", id="status", expand=False),  # For status messages
                     Horizontal(
-                        Button("Başlat", id="start_btn", variant="success"),
-                        Button("Çıkış", id="exit_btn", variant="error"),
+                        Button("Start", id="start_btn", variant="success"),
+                        Button("Exit", id="exit_btn", variant="error"),
                         id="controls",
                     ),
                     id="right",
                 )
         yield Footer()
- 
+
     def on_mount(self) -> None:
-        """Uygulama mount edildikten sonra test checkbox'larını yükle."""
-        # Başlangıçta analiz çalışmıyor
+        """Load test checkboxes after the app is mounted."""
+        # Analysis not running initially
         self._analysis_running = False
         # Mapping for clickable result buttons -> metrics
         self._result_metrics = {}
- 
-        # Motor örneği sadece test isimlerini almak için kullanılır; çalıştırma yapılmayacak.
+
+        # Engine instance used only to get test names; no execution will be performed.
         try:
             eng = Engine()
             tests = eng.get_available_tests()
         except Exception:
             tests = []
- 
+
         tests_scroll: Optional[ScrollView] = self.query_one("#tests_scroll", ScrollView)
-        # Dynamic olarak Checkbox'ları ekle
+        # Dynamically add Checkboxes
         for i, tname in enumerate(tests):
             cb = Checkbox(tname, id=f"test_{i}")
             tests_scroll.mount(cb)
- 
-        # Prepare DataTable columns (keşif amaçlı, tekrar oluşturmayı önlemek için)
+
+        # Prepare DataTable columns (for discovery, to avoid recreation)
         try:
             table = self.query_one("#results_table", DataTable)
             # clear any existing columns/rows
@@ -116,9 +116,9 @@ class PatternAnalyzerTUI(App):
                 pass
         except Exception:
             pass
- 
+
     def _format_scorecard(self, scorecard: dict) -> str:
-        """Scorecard'ı biçimlendirilmiş metin olarak döndür."""
+        """Format the scorecard as formatted text."""
         try:
             lines = []
             lines.append(f"Failed tests: {scorecard.get('failed_tests')}")
@@ -134,23 +134,23 @@ class PatternAnalyzerTUI(App):
             return "\n".join(lines)
         except Exception:
             return json.dumps(scorecard, indent=2, ensure_ascii=False)
- 
+
     def _display_results(self, output: dict) -> None:
-        """Engine.analyze çıktısını UI içinde göster: scorecard ve sonuç listesi."""
+        """Display Engine.analyze output in the UI: scorecard and results list."""
         try:
             scorecard = output.get("scorecard", {}) if isinstance(output, dict) else {}
             results = output.get("results", []) if isinstance(output, dict) else []
         except Exception:
             scorecard = {}
             results = []
- 
+
         # Update scorecard Static
         try:
             sc = self.query_one("#scorecard", Static)
             sc.update(self._format_scorecard(scorecard))
         except Exception:
             pass
- 
+
         # Populate DataTable summary
         try:
             table = self.query_one("#results_table", DataTable)
@@ -196,7 +196,7 @@ class PatternAnalyzerTUI(App):
                 self._result_metrics[f"res_btn_{i}"] = {"test_name": tname, "metrics": metrics}
         except Exception:
             pass
- 
+
         # Populate clickable results list (Buttons inside ScrollView)
         try:
             rs = self.query_one("#results_scroll", ScrollView)
@@ -212,10 +212,10 @@ class PatternAnalyzerTUI(App):
                 rs.mount(btn)
         except Exception:
             pass
- 
+
     def _show_loading(self) -> None:
-        """LoadingIndicator'ı sağ panelde göster."""
-        # Eğer zaten gösteriliyorsa yeniden mount etme
+        """Show LoadingIndicator in the right panel."""
+        # If already shown, do not remount
         if self.query("#loading"):
             return
         try:
@@ -223,51 +223,51 @@ class PatternAnalyzerTUI(App):
             right.mount(LoadingIndicator(id="loading"))
         except Exception:
             pass
- 
+
     def _hide_loading(self) -> None:
-        """LoadingIndicator'ı kaldır."""
+        """Remove the LoadingIndicator."""
         try:
             loading = self.query_one("#loading")
             loading.remove()
         except Exception:
             pass
- 
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Butonlara basılınca çalışır: Başlat, Çıkış, sonuç butonları ve modal kapatma."""
+        """Triggered when buttons are pressed: Start, Exit, result buttons, and modal close."""
         btn_id = getattr(event.button, "id", None)
         if btn_id == "exit_btn":
             self.exit()
             return
- 
+
         if btn_id == "start_btn":
-            # Seçili testleri ve seçili dosya yolunu topla
+            # Collect selected tests and selected file path
             selected_tests = [cb.label for cb in self.query(Checkbox) if getattr(cb, "id", "").startswith("test_") and cb.value]
             file_tree = self.query_one(DirectoryTree)
-            # DirectoryTree içindeki seçili dosya bilgisini güvenli okumaya çalış
+            # Safely read selected file info from DirectoryTree
             file_path = None
             for attr in ("path", "cursor_path", "selected_path", "cursor", "selected_node"):
                 val = getattr(file_tree, attr, None)
                 if val:
-                    # selected_node olabilir; path özniteliği varsa kullan
+                    # selected_node may exist; use path attribute if available
                     if hasattr(val, "path"):
                         file_path = getattr(val, "path")
                     else:
                         file_path = str(val)
                     break
- 
+
             status = self.query_one("#status", Static)
-  
-            # Eğer analiz zaten çalışıyorsa yeni analiz başlatma
+
+            # If analysis is already running, do not start a new one
             if getattr(self, "_analysis_running", False):
-                status.update("Analiz zaten çalışıyor")
+                status.update("Analysis is already running")
                 return
-  
-            # Hazırlık: Loading göster, flag set
+
+            # Preparation: Show loading, set flag
             self._analysis_running = True
             self._show_loading()
-            status.update(f"Analiz başlatıldı — seçili testler: {len(selected_tests)}")
- 
-            # Worker fonksiyonu: Engine.analyze'ı arka planda çağırır
+            status.update(f"Analysis started — selected tests: {len(selected_tests)}")
+
+            # Worker function: Calls Engine.analyze in the background
             def _worker():
                 try:
                     eng = Engine()
@@ -279,49 +279,49 @@ class PatternAnalyzerTUI(App):
                         except Exception:
                             data = b""
                     config = {"tests": [{"name": t, "params": {}} for t in selected_tests]}
-                    # Motorun ağır işi burada yapılır
+                    # Engine's heavy work is done here
                     return eng.analyze(data, config)
                 except Exception as e:
                     return {"error": str(e)}
- 
-            # tamamlandığında çağrılacak callback
+
+            # Callback to be called when done
             def _on_done(result):
                 self._analysis_running = False
                 self._hide_loading()
                 try:
                     if isinstance(result, dict) and "error" in result:
-                        status.update(f"Analiz hatası: {result['error']}")
+                        status.update(f"Analysis error: {result['error']}")
                     else:
-                        status.update("Analiz tamamlandı — sonuçlar gösteriliyor")
+                        status.update("Analysis completed — results displayed")
                         self._display_results(result or {})
                 except Exception as e:
-                    status.update(f"Görüntüleme hatası: {e}")
- 
-            # Standart threading ile arka plan çalıştır
+                    status.update(f"Display error: {e}")
+
+            # Run in background with standard threading
             try:
                 import threading
                 def _thread_worker():
                     result = _worker()
-                    # Callback'i main thread'de çalıştır
+                    # Run callback in main thread
                     self.call_from_thread(_on_done, result)
                 thread = threading.Thread(target=_thread_worker, daemon=True)
                 thread.start()
             except Exception as e:
-                # Hata durumunda temizle
+                # Clean up in case of error
                 self._analysis_running = False
                 self._hide_loading()
-                status.update(f"Analiz başlatılamadı: {e}")
+                status.update(f"Analysis could not start: {e}")
             return
- 
-        # Modal kapatma düğmesi
+
+        # Modal close button
         if btn_id == "modal_close":
             try:
                 self.pop_screen()
             except Exception:
                 pass
             return
- 
-        # Sonuç listesi butonlarına tıklama: modal içinde metrikleri göster
+
+        # Clicking on result list buttons: show metrics in modal
         if isinstance(btn_id, str) and btn_id.startswith("res_btn_"):
             info = self._result_metrics.get(btn_id)
             if not info:
@@ -337,19 +337,19 @@ class PatternAnalyzerTUI(App):
                 self.push_screen(MetricsModal(test_name, metrics_text))
             except Exception:
                 pass
- 
-    # Ek event handlerler veya yardımcılar gerektiğinde buraya eklenebilir.
- 
+
+    # Additional event handlers or helpers can be added here if needed.
+
 class MetricsModal(ModalScreen):
-    """Basit modal ekran: seçili testin metriklerini gösterir."""
+    """Simple modal screen: displays metrics for the selected test."""
     def __init__(self, test_name: str, metrics_text: str) -> None:
         super().__init__()
         self.test_name = test_name
         self.metrics_text = metrics_text
- 
+
     def compose(self) -> ComposeResult:
         yield Vertical(
-            Static(f"Metrikler — {self.test_name}", id="modal_title"),
+            Static(f"Metrics — {self.test_name}", id="modal_title"),
             (
                 Static(self.metrics_text, id="modal_metrics")
                 if _SCROLL_SRC == 'fallback'
@@ -360,9 +360,9 @@ class MetricsModal(ModalScreen):
                 ScrollView(Static(self.metrics_text), id="modal_metrics")
             ),
             Horizontal(
-                Button("Kapat", id="modal_close", variant="primary"),
+                Button("Close", id="modal_close", variant="primary"),
             ),
         )
- 
+
 if __name__ == "__main__":
     PatternAnalyzerTUI().run()
