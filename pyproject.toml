@@ -5,35 +5,36 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "patternanalyzer"
 version = "0.1.0"
-description = "Binary pattern analysis framework"
+description = "A comprehensive, plugin-based framework for binary data analysis in Python."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
     {name = "EdgeTypE", email = "edgetype@goygoyengine.com"}
 ]
+keywords = ["binary-analysis", "security", "reverse-engineering", "cryptography", "forensics", "malware-analysis", "statistical-analysis"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities"
 ]
 dependencies = [
     "click>=8.0.0",
     "numpy>=1.25.0",
     "scipy>=1.10.0",
-    # Format-analysis helpers
     "python-magic>=0.4.27",
     "pefile>=2024.2.1",
     "oletools>=0.60.1",
-    # Crypto helpers used by new plugins
     "cryptography>=41.0.0",
-    "pycryptodome>=3.18.0",
-    # Optional ML dependencies for anomaly detection plugins (recommended extras 'ml')
-    # Note: these are heavy; kept as optional extras to avoid forcing installs for all users.
+    "pycryptodome>=3.18.0"
 ]
 
 [project.optional-dependencies]
@@ -46,9 +47,7 @@ ml = [
     "scikit-learn>=1.2.0",
     "joblib>=1.2.0",
     "pandas>=2.0.0",
-    # "tensorflow-io>=0.32.0 ; python_version >= '3.10'",
 ]
-
 ui = [
     "streamlit>=1.30.0",
     "textual",
@@ -57,14 +56,7 @@ ui = [
 [project.scripts]
 patternanalyzer = "patternanalyzer.cli:cli"
 
-
 [project.entry-points."patternanalyzer.plugins"]
-# Auto-generated: map all discovered plugin modules -> their export symbols
-# Selection rules used:
-#  - Prefer explicit well-known export/class names when present (ENTRY_POINT, PLUGIN, Plugin, make_plugin, load_plugin)
-#  - Otherwise use the single TestPlugin/VisualPlugin-derived class defined in the module.
-# Notes:
-#  - patternanalyzer.plugins.parallel_helpers defines two test classes; both are registered intentionally.
 approximate_entropy = "patternanalyzer.plugins.approximate_entropy:ApproximateEntropyTest"
 autocorrelation = "patternanalyzer.plugins.autocorrelation:AutocorrelationTest"
 binary_matrix_rank = "patternanalyzer.plugins.binary_matrix_rank:BinaryMatrixRankTest"
@@ -87,10 +79,8 @@ runs = "patternanalyzer.plugins.runs_test:RunsTest"
 serial = "patternanalyzer.plugins.serial_test:SerialTest"
 vigenere = "patternanalyzer.plugins.vigenere:VigenerePlugin"
 xor_const = "patternanalyzer.plugins.xor_const:XOPlugin"
-# parallel_helpers exposes two TestPlugin implementations used in tests; keep both entry points.
 parallel_quick_stat = "patternanalyzer.plugins.parallel_helpers:QuickStat"
 parallel_blocking = "patternanalyzer.plugins.parallel_helpers:BlockingTest"
-# New advanced statistical test plugins (Dieharder, TestU01, spectral adv, Hurst)
 diehard_birthday_spacings = "patternanalyzer.plugins.diehard_birthday_spacings:BirthdaySpacingsTest"
 diehard_overlapping_sums = "patternanalyzer.plugins.diehard_overlapping_sums:OverlappingSumsTest"
 diehard_3d_spheres = "patternanalyzer.plugins.diehard_3d_spheres:ThreeDSpheresTest"
@@ -100,23 +90,21 @@ hurst_exponent = "patternanalyzer.plugins.hurst_exponent:HurstExponentTest"
 conditional_entropy = "patternanalyzer.plugins.conditional_entropy:ConditionalEntropyTest"
 mutual_information = "patternanalyzer.plugins.mutual_information:MutualInformationTest"
 transfer_entropy = "patternanalyzer.plugins.transfer_entropy:TransferEntropyTest"
-# Machine-learning based anomaly detection plugins (LSTM/GRU, Autoencoder, Classifier labeler)
 lstm_gru_anomaly = "patternanalyzer.plugins.lstm_gru_anomaly:LSTMGRUAnomalyPlugin"
 autoencoder_anomaly = "patternanalyzer.plugins.autoencoder_anomaly:AutoencoderAnomalyPlugin"
 classifier_labeler = "patternanalyzer.plugins.classifier_labeler:ClassifierLabelerPlugin"
-# Structural/format analysis plugins added by integration
 magic_detector = "patternanalyzer.plugins.magic_detector:MagicDetector"
 png_structure = "patternanalyzer.plugins.png_structure:PNGStructure"
 zip_structure = "patternanalyzer.plugins.zip_structure:ZIPStructure"
 pdf_structure = "patternanalyzer.plugins.pdf_structure:PDFStructure"
-# Crypto analysis plugins integrated: ECB detection, frequency/pattern, known constants/S-box search
 ecb_detector = "patternanalyzer.plugins.ecb_detector:ECBDetector"
 frequency_pattern = "patternanalyzer.plugins.frequency_pattern:FrequencyPattern"
 known_constants_search = "patternanalyzer.plugins.known_constants_search:KnownConstantsSearch"
+
 [project.urls]
 Homepage = "https://github.com/EdgeTypE/pattern-analyzer"
 Repository = "https://github.com/EdgeTypE/pattern-analyzer.git"
-Issues = "https://github.com/EdgeTypE/pattern-analyzer/issues"
+"Bug Tracker" = "https://github.com/EdgeTypE/pattern-analyzer/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
