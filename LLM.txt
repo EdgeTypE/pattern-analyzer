@@ -1,0 +1,227 @@
+# Pattern Analyzer
+
+## Excerpt / Summary
+
+Pattern Analyzer is a comprehensive, plugin-based framework written in Python for binary data analysis. Its core purpose is to apply a wide range of analytical techniques to any binary data source to detect non-random patterns, identify data structures, and uncover cryptographic properties. The framework is highly extensible, allowing developers to easily add new statistical tests, data transformations, and visualizers. It offers multiple user interfaces—a command-line interface (CLI) for automation, a web UI (Streamlit) for interactive analysis, a text-based UI (TUI) for terminal use, and a REST API for integration into other services.
+
+## Core Concepts
+
+-   **Plugin Architecture**: The framework's strength lies in its extensibility. The core `engine.py` discovers and runs plugins. New functionalities (tests, transforms, visuals) can be added without modifying the core engine.
+-   **Separation of Concerns**: The analysis engine (`engine.py`) is decoupled from the user interfaces (`cli.py`, `app.py`, `tui.py`, `api.py`).
+-   **Multiple Interfaces**: The tool is designed to be used in various environments: automated scripts (CLI), interactive sessions (Web UI, TUI), or as part of a larger system (Python API, REST API).
+-   **Data Abstraction**: The `BytesView` class provides a memory-efficient wrapper around binary data, offering unified access methods like `.bit_view()` to plugins.
+
+## Tech Stack
+
+-   **Core Language**: Python (>=3.10)
+-   **CLI**: `click`
+-   **Core Libraries**: `numpy`, `scipy` for statistical computations.
+-   **Web UI**: `streamlit`
+-   **TUI**: `textual`
+-   **REST API**: `fastapi`
+-   **Machine Learning Plugins (`[ml]` extra)**: `tensorflow`, `scikit-learn`, `pandas`
+-   **Packaging & Dependencies**: `setuptools`, `pyproject.toml`
+
+## Project Structure
+
+-   `pattern-analyzer/`
+    -   `patternanalyzer/`: Main source code.
+        -   `__init__.py`: Package definition.
+        -   `engine.py`: **The core analysis engine**. Discovers plugins, applies transforms, runs tests, and generates reports.
+        -   `plugin_api.py`: Defines the base classes for plugins: `TestPlugin`, `TransformPlugin`, `VisualPlugin`, `BytesView`, and `TestResult`. This is the contract for extensibility.
+        -   `plugins/`: **Directory for all built-in analysis plugins**. Each `.py` file typically contains one `TestPlugin`. This is the library of analytical tools.
+        -   `cli.py`: The `click`-based Command-Line Interface. Entry point is `patternanalyzer`.
+        -   `tui.py`: The `textual`-based Terminal User Interface.
+        -   `api.py`: The `fastapi`-based REST API for programmatic access over HTTP.
+        -   `discovery.py`: Implements the "discover" mode logic (beam search for transforms).
+        -   `sandbox_runner.py`: A script to run plugins in isolated subprocesses for stability and security.
+    -   `app.py`: The `streamlit`-based Web User Interface.
+    -   `docs/`: Project documentation.
+    -   `tests/`: Unit and integration tests for `pytest`.
+    -   `pyproject.toml`: Project metadata, dependencies, and plugin entry points.
+    -   `README.md`: Project overview and quick start guide.
+
+## Key Modules and Functionality
+
+### `patternanalyzer.engine.Engine`
+
+This is the central orchestrator. Its main methods are:
+-   `analyze()`: Runs a full analysis pipeline on a `bytes` object based on a configuration dictionary. It applies transforms, runs selected tests (sequentially or in parallel), performs False Discovery Rate (FDR) correction, and generates a final report dictionary.
+-   `analyze_stream()`: Performs analysis on a stream of data for large files. Only plugins that support the streaming API (`update`/`finalize`) will run.
+-   `discover()`: Instead of running specific tests, it applies a beam search to find likely transformation chains (e.g., single-byte XOR, base64 decode) that make the data look more like plaintext.
+-   `_discover_plugins()`: Automatically finds and registers all available plugins defined in `pyproject.toml` under the `patternanalyzer.plugins` entry point.
+
+### `patternanalyzer.plugins/`
+
+This directory contains dozens of plugins, categorized as:
+-   **Statistical Tests**: NIST-like tests (`monobit`, `runs`, `block_frequency`), Dieharder-inspired tests (`diehard_birthday_spacings`), and others (`approximate_entropy`).
+-   **Cryptographic Analysis**: `ecb_detector`, `frequency_pattern` (for repeating-key XOR), `known_constants_search` (finds AES S-boxes, etc.).
+-   **Structural Analysis**: Parsers for common formats like `png_structure`, `pdf_structure`, `zip_structure`.
+-   **Machine Learning**: `autoencoder_anomaly`, `lstm_gru_anomaly`, and `classifier_labeler` for advanced anomaly detection and classification.
+
+## Usage Guide
+
+The application can be used in four main ways: CLI, Web UI, TUI, and Python API.
+
+### 1. Command-Line Interface (CLI)
+
+The primary interface for scripting and automation. The main command is `patternanalyzer`.
+
+**Key Command:** `patternanalyzer analyze <input_file> [options]`
+
+**Modes of Operation:**
+1.  **Standard Analysis**: Runs a set of tests against the input file.
+2.  **Discovery Mode**: Uses the `--discover` flag to automatically search for simple transformations (like single-byte XOR) that might reveal hidden plaintext.
+
+**Analysis Profiles (`--profile <name>`):**
+Profiles are pre-defined sets of tests for specific use cases.
+-   `quick`: A very small, fast set of basic tests (e.g., `monobit`, `runs`).
+-   `nist`: A comprehensive suite of statistical tests inspired by the NIST SP 800-22 randomness test suite.
+-   `crypto`: A set of tests focused on cryptographic analysis (e.g., `ecb_detector`, `linear_complexity`, `frequency_pattern`).
+-   `full`: Runs every single test plugin available.
+
+**Terminal Usage Examples:**
+
+-   **Basic analysis with default tests:**
+    ```bash
+    patternanalyzer analyze suspicious.bin -o report.json
+    ```
+
+-   **Run a specific profile and generate an HTML report:**
+    ```bash
+    patternanalyzer analyze encrypted.dat --profile crypto --html-report crypto_report.html
+    ```
+
+-   **Use discovery mode to find a potential single-byte XOR key:**
+    ```bash
+    patternanalyzer analyze mystery_file.txt --discover --out discovery.json
+    ```
+
+-   **Use a custom YAML configuration file for full control:**
+    ```bash
+    # config.yml might define a transform and a specific test
+    patternanalyzer analyze data.bin --config config.yml
+    ```
+
+-   **Run tests in isolated, sandboxed processes for stability:**
+    ```bash
+    patternanalyzer analyze large_file.bin --profile full --sandbox-mode
+    ```
+
+### 2. Web User Interface (Web UI)
+
+An interactive interface for easy analysis.
+-   **How to launch:**
+    ```bash
+    patternanalyzer serve-ui
+    ```
+-   **Functionality:**
+    -   Upload files or paste Base64-encoded data.
+    -   Select tests and transforms from a checklist.
+    -   Adjust analysis settings like the FDR significance level.
+    -   View results in a clean, tabulated format, including a scorecard and visualizations.
+
+### 3. Terminal User Interface (TUI)
+
+A terminal-based interface for interactive analysis without leaving the console.
+-   **How to launch:**
+    ```bash
+    patternanalyzer tui
+    ```
+-   **Functionality:**
+    -   Navigate the file system to select an input file.
+    -   Select tests to run using checkboxes.
+    -   View a summary of results directly in the terminal.
+
+### 4. Python API
+
+For integration into other Python applications.
+
+```python
+from patternanalyzer.engine import Engine
+
+# 1. Initialize the engine
+engine = Engine()
+
+# 2. Load data
+with open("test.bin", "rb") as f:
+    data_bytes = f.read()
+
+# 3. Define the analysis configuration
+config = {
+    "transforms": [{"name": "xor_const", "params": {"xor_value": 127}}],
+    "tests": [{"name": "monobit"}, {"name": "runs"}],
+    "fdr_q": 0.05
+}
+
+# 4. Run the analysis
+output = engine.analyze(data_bytes, config)
+
+# 5. Process the results
+import json
+print(json.dumps(output['scorecard'], indent=2))
+```
+
+## How to Contribute
+
+1.  **Fork and Clone** the repository.
+2.  **Set up the environment**:
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate  # or .\.venv\Scripts\activate on Windows
+    pip install -e .[test,ml,ui]
+    ```
+3.  **Create a new branch** for your feature or bug fix.
+4.  **Make your changes**. Add or modify plugins in the `patternanalyzer/plugins/` directory.
+5.  **Add tests** for your changes in the `tests/` directory.
+6.  **Run the test suite**:
+    ```bash
+    pytest
+    ```
+7.  **Submit a Pull Request**.
+
+## Plugin Development
+
+Creating a new plugin is the primary way to extend the framework.
+
+1.  **Choose a Plugin Type** (from `plugin_api.py`):
+    -   `TestPlugin`: Analyzes data and returns a `TestResult`. This is the most common type.
+    -   `TransformPlugin`: Modifies data before it's passed to tests (e.g., decryption, decoding).
+    -   `VisualPlugin`: Generates a visualization (e.g., an SVG image) from a `TestResult`.
+
+2.  **Create the Plugin File**:
+    -   Create a new file, e.g., `patternanalyzer/plugins/my_new_test.py`.
+    -   Create a class that inherits from the chosen base class (e.g., `TestPlugin`).
+    -   Implement the required methods, primarily `run()`. The `run` method takes `data: BytesView` and `params: dict` and must return a `TestResult` object.
+
+    **Example `TestPlugin`:**
+    ```python
+    from patternanalyzer.plugin_api import TestPlugin, TestResult, BytesView
+
+    class MyNewTest(TestPlugin):
+        def describe(self) -> str:
+            return "A new test that checks for the byte 0x42."
+
+        def run(self, data: BytesView, params: dict) -> TestResult:
+            input_bytes = data.to_bytes()
+            found = b'\x42' in input_bytes
+            return TestResult(
+                test_name="my_new_test",
+                passed=not found, # Fails if the byte is found
+                p_value=None, # This is a diagnostic, not statistical, test
+                category="diagnostic",
+                metrics={"found_0x42": found}
+            )
+    ```
+
+3.  **Register the Plugin**:
+    -   Add an entry point for your new plugin in `pyproject.toml` under the `[project.entry-points."patternanalyzer.plugins"]` section.
+    ```toml
+    [project.entry-points."patternanalyzer.plugins"]
+    # ... other plugins
+    my_new_test = "patternanalyzer.plugins.my_new_test:MyNewTest"
+    ```
+
+4.  **Re-install**:
+    -   Run `pip install -e .` again to make your new plugin discoverable by the engine.
+
