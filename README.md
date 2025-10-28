@@ -1,6 +1,14 @@
+
+<!-- Badges -->
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Donate](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ff69b4.svg)](https://github.com/sponsors/edgetype)
+
 # Pattern Analyzer
 
 Pattern Analyzer is a comprehensive, plugin-based framework for binary data analysis in Python. It provides a powerful engine to apply statistical tests, cryptographic analysis, and structural format detection on any binary data source.
+
+*[Turkish](./README_TR.md)*
 
 ## Features
 
@@ -23,7 +31,7 @@ It is recommended to install Pattern Analyzer in a virtual environment.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/pattern-analyzer.git
+git clone https://github.com/edgetype/pattern-analyzer.git
 cd pattern-analyzer
 
 # Create and activate a virtual environment
@@ -43,6 +51,8 @@ The optional dependencies are:
 
 ### Command Line Interface (CLI)
 
+**Standard Analysis**
+
 Analyze a binary file using a default set of tests and save the report.
 
 ```bash
@@ -52,7 +62,33 @@ patternanalyzer analyze test.bin --out report.json
 Use a specific configuration profile for a focused analysis (e.g., cryptographic tests).
 
 ```bash
-patternanalyzer analyze encrypted.bin --profile crypto --out crypto_report.json
+patternanalyzer analyze encrypted.bin --profile crypto --out crypto_report.json```
+
+**Discovery Mode**
+
+If you don't know what kind of transformation might have been applied to your data, use `--discover` mode. It automatically tries to find common patterns like single-byte XOR keys and reports the most likely candidates.
+
+```bash
+patternanalyzer analyze secret.bin --discover --out discover_report.json
+```
+The output file `discover_report.json` will contain a list of potential transformations and a preview of the resulting data.
+
+### User Interfaces (Web & Terminal)
+
+**Web UI (Streamlit)**
+
+Launch an interactive web interface to upload files and visualize results.
+
+```bash
+patternanalyzer serve-ui
+```
+
+**Terminal UI (TUI)**
+
+Start a terminal-based interface for analysis directly in your console.
+
+```bash
+patternanalyzer tui
 ```
 
 ### Python API

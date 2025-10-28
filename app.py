@@ -49,35 +49,35 @@ def format_val(v, lang_code='tr', max_len=50):
 def main():
     # Language support
     if 'language' not in st.session_state:
-        st.session_state.language = "tr"
+        st.session_state.language = "en"
     # TO DO (P3): Load language strings from an external file
     lang = {
         "tr": {
-            "main_title": "🔬 Pattern Analyzer Analiz Platformu",
+            "main_title": "Pattern Analyzer Analiz Platformu",
             "main_desc": "Bu platform, verilerinizde rastgelelik paternlerini analiz etmek için güçlü istatistiksel testler sunar. Dosya yükleyin veya doğrudan veri girin ve kapsamlı bir analiz raporu elde edin.",
-            "results_title": "📊 Analiz Sonuçları",
-            "control_panel": "⚙️ Kontrol Paneli",
-            "file_tab": "📁 Dosya",
-            "text_tab": "✏️ Metin",
+            "results_title": "Analiz Sonuçları",
+            "control_panel": "Kontrol Paneli",
+            "file_tab": "Dosya",
+            "text_tab": "Metin",
             "file_label": "Dosya Seçin",
             "file_help": "Limit 200MB per file • BIN, TXT, DAT",
             "text_label": "Veri Girin",
             "text_placeholder": "Base64 encoded data veya doğrudan metin girin...",
-            "test_selection": "🧪 Test Seçimi",
+            "test_selection": "Test Seçimi",
             "tests_label": "Çalıştırılacak Testler",
             "tests_help": "Çalıştırılacak testleri seçin. Her test, verinin rastgeleliğini farklı açılardan inceler. Örneğin, monobit testi 0 ve 1'lerin dağılımını kontrol eder.",
             "all_tests": "Tüm Testleri Seç",
             "no_tests": "Hiçbir Test Seçme",
-            "transform_selection": "🔄 Transform Seçimi",
+            "transform_selection": "Transform Seçimi",
             "transforms_label": "Uygulanacak Transformlar",
             "transforms_help": "Uygulanacak transformları seçin. Transformlar, veriyi dönüştürerek testlerin hassasiyetini artırabilir, örneğin XOR ile şifreleme paternlerini kırar.",
             "all_transforms": "Tüm Transformları Seç",
             "no_transforms": "Hiçbir Transform Seçme",
-            "analysis_settings": "⚙️ Analiz Ayarları",
+            "analysis_settings": "Analiz Ayarları",
             "fdr_label": "FDR Anlamlılık Düzeyi (q)",
             "fdr_help": "FDR (False Discovery Rate) anlamlılık düzeyi. Düşük değer (ör. 0.05) daha katı test anlamına gelir; p-value < q ise test başarısız sayılır.",
-            "start_analysis": "🚀 Analizi Başlat",
-            "clear": "🗑️ Temizle",
+            "start_analysis": "Analizi Başlat",
+            "clear": "Temizle",
             "analyzing": "Analiz yapılıyor...",
             "analysis_error": "Analiz hatası: {error}",
             "scorecard": "Scorecard",
@@ -161,31 +161,31 @@ def main():
             }
         },
         "en": {
-            "main_title": "🔬 Pattern Analyzer Analysis Platform",
+            "main_title": "Pattern Analyzer Analysis Platform",
             "main_desc": "This platform offers powerful statistical tests to analyze randomness patterns in your data. Upload a file or enter data directly and get a comprehensive analysis report.",
-            "results_title": "📊 Analysis Results",
-            "control_panel": "⚙️ Control Panel",
-            "file_tab": "📁 File",
-            "text_tab": "✏️ Text",
+            "results_title": "Analysis Results",
+            "control_panel": "Control Panel",
+            "file_tab": "File",
+            "text_tab": "Text",
             "file_label": "Select File",
             "file_help": "Limit 200MB per file • BIN, TXT, DAT",
             "text_label": "Enter Data",
             "text_placeholder": "Base64 encoded data or plain text...",
-            "test_selection": "🧪 Test Selection",
+            "test_selection": "Test Selection",
             "tests_label": "Tests to Run",
             "tests_help": "Select tests to run. Each test examines randomness from different angles. For example, monobit checks the balance of 0s and 1s.",
             "all_tests": "Select All Tests",
             "no_tests": "Select No Tests",
-            "transform_selection": "🔄 Transform Selection",
+            "transform_selection": "Transform Selection",
             "transforms_label": "Transforms to Apply",
             "transforms_help": "Select transforms to apply. Transforms modify data to enhance test sensitivity, e.g., XOR to break encryption patterns.",
             "all_transforms": "Select All Transforms",
             "no_transforms": "Select No Transforms",
-            "analysis_settings": "⚙️ Analysis Settings",
+            "analysis_settings": "Analysis Settings",
             "fdr_label": "FDR Significance Level (q)",
             "fdr_help": "FDR (False Discovery Rate) significance level. Lower value (e.g., 0.05) means stricter testing; p-value < q fails the test.",
-            "start_analysis": "🚀 Start Analysis",
-            "clear": "🗑️ Clear",
+            "start_analysis": "Start Analysis",
+            "clear": "Clear",
             "analyzing": "Analyzing...",
             "analysis_error": "Analysis error: {error}",
             "scorecard": "Scorecard",
@@ -288,8 +288,7 @@ def main():
             st.rerun()
 
         st.header(lang['control_panel'])
-        st.divider()
-
+        # st.divider()
         # Tabs for input
         tab1, tab2 = st.tabs([lang['file_tab'], lang['text_tab']])
 
