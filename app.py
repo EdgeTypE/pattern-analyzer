@@ -111,8 +111,35 @@ def main():
                 "cusum": "Cumulative Sums: Kümülatif toplam testi, sapmaları tespit eder.",
                 "dft_spectral_advanced": "DFT Spectral Advanced: Spektral analiz, frekans paternlerini arar.",
                 "diehard_3d_spheres": "Diehard 3D Spheres: 3D küre testi (veri yetersizse hata verir).",
-                # Diğer testler için benzer açıklamalar ekleyin...
-                # (Tüm testler için eklemek ideal, ama örnek olarak birkaç tane)
+                "diehard_birthday_spacings": "Diehard Birthday Spacings: Doğum günü aralık testi.",
+                "diehard_overlapping_sums": "Diehard Overlapping Sums: Çakışan toplamlar testi.",
+                "dotplot": "Dotplot: Veri paternlerini görselleştirir.",
+                "ecb_detector": "ECB Detector: ECB modunda şifreleme paternlerini arar.",
+                "fft_spectral": "FFT Spectral: Frekans domain analizi.",
+                "frequency_pattern": "Frequency Pattern: Frekans paternleri ve Vigenere anahtar uzunluğu tahmini.",
+                "hurst_exponent": "Hurst Exponent: Uzun vadeli bağımlılık ölçüsü.",
+                "known_constants_search": "Known Constants Search: Bilinen sabitleri arar.",
+                "linear_complexity": "Linear Complexity: Lineer karmaşıklık testi.",
+                "longest_run_ones": "Longest Run of Ones: En uzun 1'ler dizisi testi.",
+                "lstm_gru_anomaly": "LSTM GRU Anomaly: Zaman serisi anomalileri tespit eder.",
+                "lz_complexity": "LZ Complexity: Lempel-Ziv karmaşıklığı.",
+                "magic_detector": "Magic Detector: Dosya tipi sihirli baytları arar.",
+                "maurers_universal": "Maurer's Universal: Evrensel istatistik testi.",
+                "mutual_information": "Mutual Information: Karşılıklı bilgi ölçüsü.",
+                "nist_dft_spectral": "NIST DFT Spectral: NIST spektral testi.",
+                "non_overlapping_template_matching": "Non-Overlapping Template: Çakışmayan şablon eşleştirme.",
+                "overlapping_template_matching": "Overlapping Template: Çakışan şablon eşleştirme.",
+                "blocking": "Blocking: Bloklama testi.",
+                "quickstat": "Quickstat: Hızlı istatistik özeti.",
+                "pdf_structure": "PDF Structure: PDF yapı analizi.",
+                "png_structure": "PNG Structure: PNG yapı analizi.",
+                "random_excursions": "Random Excursions: Rastgele gezinti testi.",
+                "random_excursions_variant": "Random Excursions Variant: Gezinti varyantı.",
+                "runs": "Runs: Runs testi, değişim sayısını kontrol eder.",
+                "serial": "Serial: Seri korelasyon testi.",
+                "testu01_smallcrush": "TestU01 SmallCrush: Küçük ezme test paketi.",
+                "transfer_entropy": "Transfer Entropy: Bilgi transferi ölçüsü.",
+                "zip_structure": "ZIP Structure: ZIP arşiv yapı analizi.",
             },
             "column_explanations": {
                 "test_name": "Test adı",
@@ -134,18 +161,111 @@ def main():
             }
         },
         "en": {
-            # İngilizce karşılıklarını ekleyin...
             "main_title": "🔬 PatternLab Analysis Platform",
-            # ... diğerleri
+            "main_desc": "This platform offers powerful statistical tests to analyze randomness patterns in your data. Upload a file or enter data directly and get a comprehensive analysis report.",
+            "results_title": "📊 Analysis Results",
+            "control_panel": "⚙️ Control Panel",
+            "file_tab": "📁 File",
+            "text_tab": "✏️ Text",
+            "file_label": "Select File",
+            "file_help": "Limit 200MB per file • BIN, TXT, DAT",
+            "text_label": "Enter Data",
+            "text_placeholder": "Base64 encoded data or plain text...",
+            "test_selection": "🧪 Test Selection",
+            "tests_label": "Tests to Run",
+            "tests_help": "Select tests to run. Each test examines randomness from different angles. For example, monobit checks the balance of 0s and 1s.",
+            "all_tests": "Select All Tests",
+            "no_tests": "Select No Tests",
+            "transform_selection": "🔄 Transform Selection",
+            "transforms_label": "Transforms to Apply",
+            "transforms_help": "Select transforms to apply. Transforms modify data to enhance test sensitivity, e.g., XOR to break encryption patterns.",
+            "all_transforms": "Select All Transforms",
+            "no_transforms": "Select No Transforms",
+            "analysis_settings": "⚙️ Analysis Settings",
+            "fdr_label": "FDR Significance Level (q)",
+            "fdr_help": "FDR (False Discovery Rate) significance level. Lower value (e.g., 0.05) means stricter testing; p-value < q fails the test.",
+            "start_analysis": "🚀 Start Analysis",
+            "clear": "🗑️ Clear",
+            "analyzing": "Analyzing...",
+            "analysis_error": "Analysis error: {error}",
+            "scorecard": "Scorecard",
+            "findings": "Findings",
+            "select_result": "Select a result",
+            "selected_details": "Selected Result Details",
+            "visuals": "Visuals",
+            "visual_error": "Could not display visual ({name}): {error}",
+            "visual_format_error": "Invalid visual format: {name}",
+            "no_results": "No analysis results or empty.",
+            "language": "Language",
+            "failed_tests": "Failed Tests",
+            "mean_effect_size": "Mean Effect Size",
+            "mean_effect_size_desc": "Average effect sizes from tests (e.g., deviation measure). None if insufficient data or not calculated.",
+            "p_value_distribution": "P-Value Distribution",
+            "p_value_distribution_desc": "Statistics of p-values (count, mean, median, etc.). In random data, p-values should be uniformly distributed.",
+            "total_tests": "Total Tests",
+            "fdr_q": "FDR q",
+            "skipped_tests": "Skipped Tests",
+            "skipped_tests_desc": "Skipped tests: Insufficient data size or preconditions not met. Details in 'reason' column of results table.",
+            "run_tests": "Run Tests",
             "test_explanations": {
                 "monobit": "Monobit test: Checks the proportion of 0s and 1s. Should be approximately equal in random data.",
-                # ... diğerleri
+                "approximate_entropy": "Approximate Entropy: Measures unpredictability. Low entropy indicates regular patterns.",
+                "autocorrelation": "Autocorrelation: Computes lagged correlation. High values indicate periodicity.",
+                "autoencoder_anomaly": "Autoencoder Anomaly: Detects anomalies using machine learning.",
+                "binary_matrix_rank": "Binary Matrix Rank: Tests for linear dependencies in matrices.",
+                "block_frequency": "Block Frequency: Tests frequency distribution in blocks.",
+                "classifier_labeler": "Classifier Labeler: Labels data using a classifier.",
+                "conditional_entropy": "Conditional Entropy: Measures dependencies.",
+                "cusum": "Cumulative Sums: Detects deviations in cumulative sums.",
+                "dft_spectral_advanced": "DFT Spectral Advanced: Spectral analysis for frequency patterns.",
+                "diehard_3d_spheres": "Diehard 3D Spheres: 3D sphere test (errors if data insufficient).",
+                "diehard_birthday_spacings": "Diehard Birthday Spacings: Birthday spacing test.",
+                "diehard_overlapping_sums": "Diehard Overlapping Sums: Overlapping sums test.",
+                "dotplot": "Dotplot: Visualizes data patterns.",
+                "ecb_detector": "ECB Detector: Searches for ECB mode encryption patterns.",
+                "fft_spectral": "FFT Spectral: Frequency domain analysis.",
+                "frequency_pattern": "Frequency Pattern: Frequency patterns and Vigenere key length estimation.",
+                "hurst_exponent": "Hurst Exponent: Measures long-term dependencies.",
+                "known_constants_search": "Known Constants Search: Searches for known constants.",
+                "linear_complexity": "Linear Complexity: Linear complexity test.",
+                "longest_run_ones": "Longest Run of Ones: Longest sequence of 1s test.",
+                "lstm_gru_anomaly": "LSTM GRU Anomaly: Detects time series anomalies.",
+                "lz_complexity": "LZ Complexity: Lempel-Ziv complexity.",
+                "magic_detector": "Magic Detector: File type magic bytes search.",
+                "maurers_universal": "Maurer's Universal: Universal statistical test.",
+                "mutual_information": "Mutual Information: Mutual information measure.",
+                "nist_dft_spectral": "NIST DFT Spectral: NIST spectral test.",
+                "non_overlapping_template_matching": "Non-Overlapping Template: Non-overlapping template matching.",
+                "overlapping_template_matching": "Overlapping Template: Overlapping template matching.",
+                "blocking": "Blocking: Blocking test.",
+                "quickstat": "Quickstat: Quick statistical summary.",
+                "pdf_structure": "PDF Structure: PDF structure analysis.",
+                "png_structure": "PNG Structure: PNG structure analysis.",
+                "random_excursions": "Random Excursions: Random excursion test.",
+                "random_excursions_variant": "Random Excursions Variant: Excursion variant.",
+                "runs": "Runs: Runs test, checks number of changes.",
+                "serial": "Serial: Serial correlation test.",
+                "testu01_smallcrush": "TestU01 SmallCrush: Small crush test battery.",
+                "transfer_entropy": "Transfer Entropy: Information transfer measure.",
+                "zip_structure": "ZIP Structure: ZIP archive structure analysis.",
             },
             "column_explanations": {
                 "test_name": "Test name",
                 "passed": "Passed? (True: Randomness accepted)",
                 "p_value": "P-value: Low (<0.05) means non-random. None if test doesn't produce p-value (descriptive).",
-                # ... diğerleri
+                "p_values": "Sub p-values (for multi-subtests).",
+                "effect_sizes": "Effect size: Deviation measure.",
+                "flags": "Additional flags.",
+                "z_score": "Z-score: Deviation in standard deviations.",
+                "evidence": "Evidence/extra details.",
+                "time_ms": "Processing time (ms).",
+                "bytes_processed": "Processed bytes.",
+                "status": "Status: completed, skipped, error.",
+                "fdr_rejected": "Rejected by FDR?",
+                "fdr_q": "FDR threshold.",
+                "visuals": "Visuals (if any).",
+                "reason": "Reason for skip or error (e.g., insufficient data).",
+                "metrics": "Additional metrics.",
             }
         }
     }[st.session_state.language]
@@ -202,9 +322,9 @@ def main():
         )
 
         # Test açıklamaları için expander
-        with st.expander("Test Açıklamaları"):
+        with st.expander("Test Açıklamaları" if st.session_state.language == "tr" else "Test Explanations"):
             for test in available_tests:
-                desc = lang['test_explanations'].get(test, "Açıklama yok.")
+                desc = lang['test_explanations'].get(test, "Açıklama yok." if st.session_state.language == "tr" else "No description.")
                 st.write(f"**{test}**: {desc}")
 
         col1, col2 = st.columns(2)
@@ -322,14 +442,16 @@ def main():
                     'fdr_rejected', 'fdr_q', 'visuals', 'reason', 'metrics'
                 ]
                 df = df.reindex(columns=expected_columns)
-                # Do not stringify metrics, let dataframe handle
+                # Convert dict keys in metrics to str for Arrow compatibility
+                if 'metrics' in df.columns:
+                    df['metrics'] = df['metrics'].apply(lambda d: {str(k): v for k, v in d.items()} if isinstance(d, dict) else d)
                 if 'p_value' in df.columns:
                     def _p_style(v):
                         try:
                             return 'background-color: red' if float(v) < fdr_q else ''
                         except Exception:
                             return ''
-                    styled = df.style.applymap(_p_style, subset=['p_value'])
+                    styled = df.style.map(_p_style, subset=['p_value'])
                     st.dataframe(styled, column_config={
                         col: st.column_config.TextColumn(help=lang['column_explanations'].get(col, '')) for col in expected_columns
                     })
@@ -349,13 +471,13 @@ def main():
 
                     # Test-specific explanation
                     test_name = selected_result.get('test_name')
-                    desc = lang['test_explanations'].get(test_name, "Açıklama yok.")
+                    desc = lang['test_explanations'].get(test_name, "Açıklama yok." if st.session_state.language == "tr" else "No description.")
                     st.write(f"**Test Açıklaması**: {desc}")
 
                     # If skipped or error, show reason
                     status = selected_result.get('status')
                     if status == 'skipped' or status == 'error':
-                        reason = selected_result.get('reason', 'Bilinmeyen neden')
+                        reason = selected_result.get('reason', 'Bilinmeyen neden' if st.session_state.language == "tr" else 'Unknown reason')
                         st.warning(f"Bu test {status} oldu. Neden: {reason}")
 
                     # Visuals if any
@@ -367,13 +489,18 @@ def main():
                                 if 'data_base64' in vdata:
                                     try:
                                         mime = vdata.get('mime', 'image/svg+xml')
-                                        img_data = base64.b64decode(vdata['data_base64'])
-                                        st.image(img_data, caption=vname, use_column_width=True)
+                                        base64_data = vdata['data_base64']
+                                        if mime == 'image/svg+xml':
+                                            # Display SVG using markdown
+                                            st.markdown(f'<img src="data:image/svg+xml;base64,{base64_data}" alt="{vname}">', unsafe_allow_html=True)
+                                        else:
+                                            img_data = base64.b64decode(base64_data)
+                                            st.image(img_data, caption=vname, use_container_width=True)
                                     except Exception as e:
                                         st.error(lang['visual_error'].format(name=vname, error=str(e)))
                                 elif 'path' in vdata:
                                     try:
-                                        st.image(vdata['path'], caption=vname, use_column_width=True)
+                                        st.image(vdata['path'], caption=vname, use_container_width=True)
                                     except Exception as e:
                                         st.error(lang['visual_error'].format(name=vname, error=str(e)))
                             else:
