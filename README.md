@@ -1,200 +1,120 @@
 # PatternLab
 
-Binary pattern analysis framework for statistical testing and transformation of binary data.
+PatternLab is a comprehensive, plugin-based framework for binary data analysis in Python. It provides a powerful engine to apply statistical tests, cryptographic analysis, and structural format detection on any binary data source.
 
 ## Features
 
-- **Plugin Architecture**: Extensible system for transforms and statistical tests
-- **XOR Transform**: Apply constant XOR transformation to binary data
-- **Monobit Test**: Statistical frequency test for binary sequences
-- **CLI Interface**: Command-line tool for easy analysis
-- **Python API**: Programmatic access to all functionality
+- **Extensible Plugin Architecture**: Easily add new statistical tests, data transformers, or visualizers.
+- **Rich Plugin Library**: Comes with a wide range of built-in plugins for:
+  - **Statistical Analysis**: NIST-like tests (Monobit, Runs, FFT), Dieharder-inspired tests, and advanced metrics like Hurst Exponent and Entropy.
+  - **Cryptographic Analysis**: Detects ECB mode encryption, repeating-key XOR patterns, and searches for known constants like AES S-boxes.
+  - **Structural Analysis**: Basic parsers for formats like ZIP, PNG, and PDF.
+  - **Machine Learning**: Anomaly detection using Autoencoders, LSTMs, and pre-trained classifiers.
+- **Multiple Interfaces**: Use PatternLab the way you want:
+  - **Command-Line Interface (CLI)** for scripting and automation.
+  - **Web User Interface (Streamlit)** for interactive analysis and visualization.
+  - **Text-based User Interface (TUI)** for terminal-based interaction.
+  - **REST API (FastAPI)** to integrate PatternLab into other services.
+- **High-Performance Engine**: Supports parallel test execution, streaming analysis for large files, and sandboxed plugin execution for security and stability.
 
 ## Installation
 
-### From Source
+It is recommended to install PatternLab in a virtual environment.
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd patternlab
+git clone https://github.com/your-username/pattern-analyzer.git
+cd pattern-analyzer
 
-# Install in development mode
-pip install -e .
+# Create and activate a virtual environment
+python -m venv .venv
+# On Windows: .venv\Scripts\activate
+# On macOS/Linux: source .venv/bin/activate
+
+# Install the package in editable mode with all optional dependencies
+pip install -e .[test,ml,ui]
 ```
+The optional dependencies are:
+- `test`: for running the test suite with `pytest`.
+- `ml`: for machine learning-based plugins (TensorFlow, scikit-learn).
+- `ui`: for the Streamlit web UI and Textual TUI.
 
-### Dependencies
+## Quick Start
 
-- Python 3.10+
-- click (for CLI)
-- pytest (for testing)
+### Command Line Interface (CLI)
 
-## Usage
-
-### Command Line Interface
-
-Analyze a binary file:
+Analyze a binary file using a default set of tests and save the report.
 
 ```bash
-# Basic analysis (writes JSON with top-level keys "results" and "scorecard")
-patternlab analyze input.bin --out results.json
-
-# With XOR constant transformation
-patternlab analyze input.bin --out results.json --xor-value 255
+patternlab analyze test.bin --out report.json
 ```
 
-Options:
-- `input-file`: Path to binary file to analyze
-- `--out`: Output JSON file (default: report.json)
-- `--xor-value`: XOR value for transformation (0-255, default: 0)
+Use a specific configuration profile for a focused analysis (e.g., cryptographic tests).
 
-CLI example — updated JSON output (file written to `results.json`; top-level schema shown below):
-
-Top-level schema:
-
-```json
-{
-  "results": [...],
-  "scorecard": {...}
-}
-```
-
-Full example output (file written to `results.json`):
-
-```json
-{
-  "results": [
-    {
-      "test_name": "monobit",
-      "passed": true,
-      "p_value": 0.05,
-      "p_values": {"overall": 0.05},
-      "effect_sizes": {"overall": 0.8},
-      "flags": [],
-      "metrics": {"bit_count": 1000},
-      "z_score": 1.96,
-      "evidence": null,
-      "fdr_rejected": false,
-      "fdr_q": 0.05
-    }
-  ],
-  "scorecard": {
-    "failed_tests": 0,
-    "mean_effect_size": 0.8,
-    "p_value_distribution": {
-      "count": 1,
-      "mean": 0.05,
-      "median": 0.05,
-      "stdev": 0.0,
-      "histogram": {"0-0.01": 0, "0.01-0.05": 0, "0.05-0.1": 1, "0.1-1.0": 0}
-    },
-    "total_tests": 1,
-    "fdr_q": 0.05
-  }
-}
+```bash
+patternlab analyze encrypted.bin --profile crypto --out crypto_report.json
 ```
 
 ### Python API
 
+Programmatically run an analysis pipeline.
+
 ```python
 from patternlab.engine import Engine
-from patternlab.plugins.xor_const import XOPlugin
-from patternlab.plugins.monobit import MonobitTest
-from patternlab.plugin_api import BytesView, serialize_testresult
-import json
 
-# Engine ve plugin kayıtları
+# Initialize the analysis engine
 engine = Engine()
-engine.register_transform('xor_const', XOPlugin())
-engine.register_test('monobit', MonobitTest())
 
-# Veri analizi
-with open('input.bin', 'rb') as f:
-    data = f.read()
+# Load data from a file
+with open("test.bin", "rb") as f:
+    data_bytes = f.read()
 
-config = {'transforms': [{'name': 'xor_const', 'params': {'xor_value': 255}}], 'tests': [{'name': 'monobit', 'params': {}}]}
-output = engine.analyze(data, config)
-
-# `engine.analyze` fonksiyonu top-level bir dict döner:
-# { "results": [...], "scorecard": {...} }
-# TestResult'ları canonical JSON şemasına çevirmek için serialize_testresult kullanılmaktadır.
-print(json.dumps(output, indent=2))
-```
-
-Örnek serializasyon (yeni TestResult şeması — CLI ve engine tarafından üretilen her bir sonuç bu şemaya uyar):
-```json
-{
-  "test_name": "monobit",
-  "passed": true,
-  "p_value": 0.05,
-  "p_values": {"overall": 0.05},
-  "effect_sizes": {"overall": 0.8},
-  "flags": ["flag1", "flag2"],
-  "metrics": {"metric1": 123, "metric2": 456},
-  "z_score": 1.96,
-  "evidence": "Some evidence string",
-  "fdr_rejected": false,
-  "fdr_q": 0.05
+# Define an analysis configuration
+# This example applies a simple XOR transform before running the monobit test
+config = {
+    "transforms": [{"name": "xor_const", "params": {"xor_value": 127}}],
+    "tests": [{"name": "monobit", "params": {}}],
+    "fdr_q": 0.05 # Set the False Discovery Rate significance level
 }
-```
 
-Not: Eğer eski `details` alanı varsa, `serialize_testresult` fonksiyonu onu `metrics` içine birleştirir.
+# Run the analysis
+output = engine.analyze(data_bytes, config)
 
-## Available Plugins
-
-### Transform Plugins
-
-- **xor_const**: Applies XOR transformation with constant value
-
-### Test Plugins
-
-- **monobit**: Monobit frequency test for random number generators
-
-## Testing
-
-Run the test suite:
-
-```bash
-# Run all tests
-pytest
-
-# Run with verbose output
-pytest -v
-
-# Run specific test file
-pytest tests/test_xor.py
+# Print the results
+import json
+print(json.dumps(output, indent=2))
 ```
 
 ## Project Structure
 
 ```
-patternlab/
-├── __init__.py              # Package initialization
-├── plugin_api.py           # Plugin base classes and data structures
-├── engine.py               # Main analysis engine
-├── cli.py                  # Command line interface
-└── plugins/
-    ├── __init__.py
-    ├── xor_const.py        # XOR transform plugin
-    └── monobit.py          # Monobit test plugin
-tests/
-├── test_xor.py
-└── test_monobit.py
+pattern-analyzer/
+├── patternlab/               # Main source code for the framework
+│   ├── plugins/              # Built-in analysis and transform plugins
+│   ├── __init__.py
+│   ├── engine.py             # The core analysis engine
+│   ├── plugin_api.py         # Base classes for plugins (Test, Transform, Visual)
+│   ├── cli.py                # Click-based Command Line Interface
+│   ├── api.py                # FastAPI-based REST API
+│   ├── tui.py                # Textual-based Terminal User Interface
+│   └── ...
+├── app.py                    # Streamlit Web User Interface
+├── docs/                     # Documentation files for MkDocs
+├── tests/                    # Pytest unit and integration tests
+├── pyproject.toml            # Project metadata and dependencies
+└── README.md
 ```
-
-## License
-
-MIT License - see LICENSE file for details.
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass: `pytest`
-5. Submit a pull request
+Contributions are welcome! Please feel free to open an issue or submit a pull request.
 
-## Requirements
+1.  Fork the repository.
+2.  Create a new feature branch (`git checkout -b feature/my-new-feature`).
+3.  Implement your changes and add tests.
+4.  Ensure all tests pass (`pytest`).
+5.  Submit a pull request.
 
-- Python 3.10 or higher
-- No external dependencies beyond standard library (except for development)
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

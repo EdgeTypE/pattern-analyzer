@@ -1,104 +1,104 @@
 {
   "monobit": {
     "title": "Monobit (Frequency) Test",
-    "short": "Bitlerin 0/1 dengesini kontrol eder.",
-    "long": "Test, bit dizisindeki 0 ve 1 sayıları arasındaki oransal dengeyi değerlendirir. Aşırı sapma rasgele olmayanlığı gösterir.",
-    "remediation": "Düşük p-değerleri tekrar eden bit kalıpları veya sabit bit akışı gösterir; veri kaynağını veya ön işleme (örneğin sıkıştırma) kontrol edin."
+    "short": "Checks the 0/1 balance of the bits.",
+    "long": "The test evaluates the proportional balance between the number of 0s and 1s in the bit string. Excessive deviation indicates non-randomness.",
+    "remediation": "Low p-values indicate repeating bit patterns or a constant bitstream; check the data source or preprocessing (e.g., compression)."
   },
   "runs": {
     "title": "Runs Test",
-    "short": "Bitler arasındaki ardışık aynı değer (run) dağılımını kontrol eder.",
-    "long": "Test, art arda gelen 0 veya 1 kümelerinin sayısını ve uzunluklarını değerlendirir; beklenenden fazla veya az run rasgeleliği bozar.",
-    "remediation": "Sık tekrar eden alt diziler veya kalıp üretimi varsa, verinin kaynağını veya üretim sürecini inceleyin."
+    "short": "Checks the distribution of consecutive identical values (runs) among bits.",
+    "long": "The test evaluates the number and lengths of consecutive sets of 0s or 1s; more or fewer runs than expected compromises randomness.",
+    "remediation": "If there are frequently repeating subsequences or pattern generation, examine the data's source or the generation process."
   },
   "block_frequency": {
     "title": "Block Frequency Test",
-    "short": "Büyük bloklarda bit frekansını ölçer.",
-    "long": "Veriyi sabit uzunluklu bloklara ayırır ve her blokta 0/1 oranını değerlendirir; blok içi tutarsızlıklar rasgelelik göstergesidir.",
-    "remediation": "Özellikle yapılandırılmış veri formatlarında (header/payload) blok boyutunu ayarlayın veya transform uygulayın."
+    "short": "Measures bit frequency in large blocks.",
+    "long": "It divides the data into fixed-length blocks and evaluates the 0/1 ratio in each block; intra-block inconsistencies are an indicator of a lack of randomness.",
+    "remediation": "Adjust the block size or apply a transformation, especially in structured data formats (header/payload)."
   },
   "cusum": {
     "title": "Cumulative Sum (CUSUM) Test",
-    "short": "Bit dizisinin kümülatif toplama sapmalarını inceler.",
-    "long": "CUSUM, pozitif ve negatif sapmaların kümülatif etkisini ölçer; büyük sapan eğilimler rasgele olmayanlığı işaret eder.",
-    "remediation": "Trend oluşturan kaynakları ve sürekli bias'ı araştırın; ön işleme ile düzeltilip düzeltilmeyeceğini test edin."
+    "short": "Examines the cumulative sum deviations of the bit string.",
+    "long": "CUSUM measures the cumulative effect of positive and negative deviations; large deviating trends indicate non-randomness.",
+    "remediation": "Investigate sources creating trends and continuous bias; test whether it can be corrected with preprocessing."
   },
   "serial": {
     "title": "Serial (Overlapping) Test",
-    "short": "N-gram (bit sıraları) frekanslarını karşılaştırır.",
-    "long": "Seri test, n-bit alt dizilerin beklenen frekanslarını değerlendirir; örtüşen n-gram'ler arasındaki anormallikler ortaya çıkar.",
-    "remediation": "Tekrarlayan motifleri, sıkıştırılmış veya kodlu dizileri kontrol edin; transform zinciri ile test edin."
+    "short": "Compares the frequencies of N-grams (bit sequences).",
+    "long": "The serial test evaluates the expected frequencies of n-bit subsequences; it reveals anomalies between overlapping n-grams.",
+    "remediation": "Check for repeating motifs, compressed or encoded sequences; test with a transformation chain."
   },
   "approximate_entropy": {
     "title": "Approximate Entropy",
-    "short": "Verinin düzensizliğini entropi temelli ölçer.",
-    "long": "Yaklaşık entropi, verideki tekrar eden paternlere duyarlıdır; düşük değerler deterministik yapıyı işaret edebilir.",
-    "remediation": "Tekrar eden yapıların kaynağını araştırın veya farklı pencere boyutlarıyla yeniden değerlendir."
+    "short": "Measures the irregularity of the data based on entropy.",
+    "long": "Approximate entropy is sensitive to repeating patterns in the data; low values may indicate a deterministic structure.",
+    "remediation": "Investigate the source of repeating structures or re-evaluate with different window sizes."
   },
   "maurers_universal": {
     "title": "Maurer's Universal Statistical Test",
-    "short": "Sıkıştırılabilirlik üzerinden rastgeleliği değerlendirir.",
-    "long": "Bu test, verinin ideal sıkıştırma oranına göre değerlendirilir; kolay sıkıştırılabilen veri rastgele değildir.",
-    "remediation": "Verinin sıkıştırılabilirliğini kontrol edin; tek tip tekrarlar varsa veri kaynağını gözden geçirin."
+    "short": "Evaluates randomness based on compressibility.",
+    "long": "This test evaluates the data against its ideal compression ratio; easily compressible data is not random.",
+    "remediation": "Check the compressibility of the data; if there are uniform repetitions, review the data source."
   },
   "non_overlapping_template": {
     "title": "Non-overlapping Template Matching",
-    "short": "Belirli şablonların varlığını sayar (çakışma yok).",
-    "long": "Önceden tanımlı sabit uzunluklu şablonların tekrarını sayar; aşırı tekrar şüphelidir.",
-    "remediation": "Şablon setini ve eşik değerlerini gözden geçirin; pre-transform uygulamayı deneyin."
+    "short": "Counts the occurrences of specific templates (no overlap).",
+    "long": "It counts the repetitions of predefined fixed-length templates; excessive repetition is suspicious.",
+    "remediation": "Review the template set and threshold values; try applying a pre-transform."
   },
   "overlapping_template": {
     "title": "Overlapping Template Matching",
-    "short": "Belirli şablonların tekrarını çakışma olsa bile sayar.",
-    "long": "Örtüşen şablon örüntülerini sayarak lokal tekrarlılıkları tespit eder.",
-    "remediation": "Verideki sık tekrar eden motifleri inceleyin; gerekirse windowing uygulayın."
+    "short": "Counts the repetition of specific templates, even with overlap.",
+    "long": "Detects local redundancies by counting overlapping template patterns.",
+    "remediation": "Examine frequently repeating motifs in the data; apply windowing if necessary."
   },
   "random_excursions": {
     "title": "Random Excursions",
-    "short": "Saçılma (excursion) ziyaretlerinin dağılımını inceler.",
-    "long": "Random walk temelli bu test, durumların ziyaret sıklıklarını değerlendirir; beklenmeyen dağılımlar düzensizlik göstergesi olabilir.",
-    "remediation": "Uzun aralıklı bağımlılıkları kontrol edin; daha fazla örnekleme ile test edin."
+    "short": "Examines the distribution of excursion visits.",
+    "long": "This test, based on a random walk, evaluates the visit frequencies of states; unexpected distributions can be an indicator of irregularity.",
+    "remediation": "Check for long-range dependencies; test with more sampling."
   },
   "random_excursions_variant": {
     "title": "Random Excursions Variant",
-    "short": "Çeşitlendirilmiş excursion sayım metrikleri sunar.",
-    "long": "Variant, farklı durumların ziyaret istatistiklerini ölçerek daha hassas saptamalar yapar.",
-    "remediation": "Anormal değerler görüldüğünde verinin segmentlerini analiz edin."
+    "short": "Provides diversified excursion counting metrics.",
+    "long": "The variant makes more precise detections by measuring the visit statistics of different states.",
+    "remediation": "Analyze segments of the data when abnormal values are observed."
   },
   "nist_dft_spectral": {
     "title": "NIST DFT Spectral Test",
-    "short": "Dizinin frekans alanındaki anormalliklerini arar.",
-    "long": "Diskret Fourier Transform (DFT) kullanarak tepe (peak) frekansları tespit eder; belirgin spektral tepe rasgele olmayan düzenleri gösterir.",
-    "remediation": "Periyodiklik üreten kaynakları (tekrar eden bloklar, sensor sampling) kontrol edin."
+    "short": "Looks for anomalies in the frequency domain of the sequence.",
+    "long": "Detects peak frequencies using the Discrete Fourier Transform (DFT); a prominent spectral peak indicates non-random patterns.",
+    "remediation": "Check sources that produce periodicity (repeating blocks, sensor sampling)."
   },
   "fft_spectral": {
     "title": "FFT Spectral (Large-Scale)",
-    "short": "Büyük veriler için spektral test ve downsample koruması.",
-    "long": "FFT tabanlı test, NAIVE_DFT_BIT_LIMIT eşiği üzerinden otomatik örnekleme yapar; yüksek bellek kullanımını engeller.",
-    "remediation": "Eşikleri ve downsample ayarlarını doğrulayın; veri segmentasyonu deneyin."
+    "short": "Spectral test for large data with downsample protection.",
+    "long": "The FFT-based test performs automatic sampling above the NAIVE_DFT_BIT_LIMIT threshold; it prevents high memory usage.",
+    "remediation": "Verify thresholds and downsample settings; try data segmentation."
   },
   "linear_complexity": {
     "title": "Linear Complexity Test",
-    "short": "Verinin LFSR tabanlı karmaşıklığını ölçer.",
-    "long": "Lineer karmaşıklık, diziyi üretebilecek en kısa LFSR uzunluğunu değerlendirir; düşük karmaşıklık deterministik yapıya işaret eder.",
-    "remediation": "Tekrarlayan yapı veya kısa periyotlu kaynakları inceleyin."
+    "short": "Measures the LFSR-based complexity of the data.",
+    "long": "Linear complexity evaluates the length of the shortest LFSR that can produce the sequence; low complexity indicates a deterministic structure.",
+    "remediation": "Examine repeating structures or short-period sources."
   },
   "lz_complexity": {
     "title": "LZ-Complexity",
-    "short": "Lempel-Ziv sıkıştırma temelli karmaşıklık metriği.",
-    "long": "Verinin LZ77/LZ78 tabanlı ayrıştırılabilirliğini ölçer; düşük değerler yüksek tekrarlılık gösterir.",
-    "remediation": "Sık tekrar eden alt dizileri ve protokol başlıklarını kontrol edin."
+    "short": "Lempel-Ziv compression-based complexity metric.",
+    "long": "Measures the decomposability of the data based on LZ77/LZ78; low values indicate high repetitiveness.",
+    "remediation": "Check for frequently repeating subsequences and protocol headers."
   },
   "dotplot": {
     "title": "Dotplot (Self-Similarity)",
-    "short": "Verinin kendi içinde tekrar eden bölümlerini görselleştirir.",
-    "long": "Pencerelere bölünmüş veri arasındaki benzerlik matrisi, kopyalanmış veya tekrarlayan blokları gösteren bir ısı haritası üretir.",
-    "remediation": "Tekrarlayan segmentleri ayıklayın veya segment bazlı analiz uygulayın; artefaktları raporlayın."
+    "short": "Visualizes repeating sections of the data within itself.",
+    "long": "The similarity matrix between windowed data produces a heatmap showing copied or repeating blocks.",
+    "remediation": "Extract repeating segments or apply segment-based analysis; report artifacts."
   },
   "binary_matrix_rank": {
     "title": "Binary Matrix Rank Test",
-    "short": "Bit matrislerinin rank dağılımını test eder.",
-    "long": "Veriden oluşturulan ikili matrislerin rank'leri beklenen dağılımdan saparsa rasgelelik sorgulanır.",
-    "remediation": "Matris boyutlandırmasını ve veri segmentasyonunu kontrol edin."
+    "short": "Tests the rank distribution of bit matrices.",
+    "long": "If the ranks of binary matrices created from the data deviate from the expected distribution, randomness is questioned.",
+    "remediation": "Check matrix sizing and data segmentation."
   }
 }

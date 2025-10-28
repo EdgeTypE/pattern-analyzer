@@ -1,31 +1,32 @@
-# Config Örnekleri
+# Configuration Examples
 
-Bu dizin, PatternLab için JSON ve YAML formatında örnek konfigürasyon dosyaları içerir.
+This directory contains example configuration files for PatternLab in both `JSON` and `YAML` formats. These files demonstrate how to customize an analysis pipeline.
 
-Dosyalar:
-- [`docs/configs/example.json`](docs/configs/example.json:1) — JSON örneği
-- [`docs/configs/example.yml`](docs/configs/example.yml:1) — YAML örneği
+## Files
 
-Açıklama (alanlar):
-- transforms: Sıralı dönüşümler. Her öğe string veya {"name": .., "params": {...}} olabilir.
-- tests: Çalıştırılacak testler listesi. Her öğe string veya {"name": .., "params": {...}} olabilir.
-- fdr_q: FDR düzeltmesi için q (ör. 0.05).
-- visuals: Görsel eklentiler için parametre haritası (örn. {"fft_placeholder": {"mime": "image/svg+xml"}}).
-- html_report: Engine tarafından yazılacak minimal HTML raporun yolu.
-- log_path: JSONL formatında test log satırlarının yazılacağı dosya yolu.
+- **`example.json`**: An example configuration using JSON syntax.
+- **`example.yml`**: An equivalent example using YAML syntax.
 
-Kullanım - CLI:
+## Configuration Structure
 
-patternlab analyze ./test.bin -c docs/configs/example.json -o report.json
+You can use a configuration file with the CLI (`-c` or `--config` flag) or pass a dictionary with the same structure to the `engine.analyze()` method in the Python API.
 
-Kullanım - Programatik:
+The main top-level keys are:
 
-from patternlab.engine import Engine
-engine = Engine()
-with open("test.bin","rb") as f:
-    out = engine.analyze(f.read(), config)
+-   `transforms`: A list of data transformation plugins to apply sequentially before analysis. Each item can be a simple string (the plugin name) or a dictionary specifying a `name` and `params`.
+-   `tests`: A list of test plugins to run on the (potentially transformed) data. The structure is the same as for `transforms`.
+-   `fdr_q`: (Optional) A float between 0 and 1 specifying the significance level (q-value) for the False Discovery Rate (FDR) correction. This helps control for false positives when running multiple tests. Defaults to `0.05`.
+-   `html_report`: (Optional) A file path where a standalone HTML report will be generated.
+-   `log_path`: (Optional) A file path where detailed, structured (JSONL) logs will be written during the analysis.
 
-Notlar:
-- YAML dosyaları yüklemek için PyYAML gerekli olabilir.
-- Config içindeki test girdi formatları CLI tarafından normalize edilir (bakınız [`patternlab/cli.py`](patternlab/cli.py:1)).
-- Daha fazla örnek gerektiğinde bu dizine yeni dosyalar ekleyin.
+### Example Usage (CLI)
+
+You can run an analysis using one of the example configuration files like this:
+
+```bash
+# Using the YAML configuration
+patternlab analyze my_data.bin --config docs/configs/example.yml
+
+# Using the JSON configuration
+patternlab analyze my_data.bin --config docs/configs/example.json
+```

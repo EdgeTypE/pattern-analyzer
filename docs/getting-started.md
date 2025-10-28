@@ -1,49 +1,110 @@
 # Getting Started
 
-Bu sayfa projeyi hızlıca kurup çalıştırmak için gerekli adımları içerir.
+This guide will walk you through the basic steps to set up PatternLab and perform your first analysis.
 
-Önkoşullar
-- Python 3.10+ kurulu olmalı
-- Depolama kökü: proje dizini (bkz. [`README.md`](README.md:1))
+## Prerequisites
 
-Kurulum (geliştirme)
+- Python 3.10 or newer.
+- `git` for cloning the repository.
+
+## Installation
+
+First, clone the repository and set up a Python virtual environment.
+
 ```bash
-# sanal ortam
+# Clone the repository
+git clone https://github.com/your-username/pattern-analyzer.git
+cd pattern-analyzer
+
+# Create and activate a virtual environment
 python -m venv .venv
-.venv/Scripts/activate
+# On Windows: .venv\Scripts\activate
+# On macOS/Linux: source .venv/bin/activate
 
-# proje bağımlılıkları (geliştirme)
-pip install -e .[dev]
-pip install mkdocs mkdocs-material
+# Install the project in editable mode with all optional dependencies
+pip install -e .[test,ml,ui]
 ```
 
-Hızlı CLI örneği
+This command installs PatternLab and all dependencies required for the user interfaces, machine learning plugins, and running tests.
+
+## Running Your First Analysis (CLI)
+
+The Command-Line Interface (CLI) is the quickest way to analyze a file. Let's analyze the provided `test.bin` file.
+
 ```bash
-# örnek yapılandırma: [`docs/configs/example.yml`](docs/configs/example.yml:1)
-patternlab analyze test.bin -c docs/configs/example.yml -o report.json
+# Run analysis on a file and save the output to report.json
+patternlab analyze test.bin --out report.json
 ```
 
-Programatik kullanım
+After the command completes, a `report.json` file will be created in your directory. It contains a detailed breakdown of the results from all default tests.
+
+```json
+{
+  "results": [
+    {
+      "test_name": "monobit",
+      "passed": true,
+      "p_value": 0.53,
+      "...": "..."
+    }
+  ],
+  "scorecard": {
+    "failed_tests": 0,
+    "...": "..."
+  },
+  "meta": {
+    "...": "..."
+  }
+}
+```
+
+## Using the Python API
+
+For more advanced use cases, you can integrate PatternLab directly into your Python scripts.
+
+Create a file named `example.py` with the following content:
+
 ```python
 from patternlab.engine import Engine
+import json
+
+# 1. Initialize the analysis engine
 engine = Engine()
-with open("test.bin","rb") as f:
-    data = f.read()
 
+# 2. Define the data to be analyzed
+data_bytes = b'\x55\xAA' * 128  # A simple alternating pattern
+
+# 3. Create a configuration for the analysis
+#    We will run two simple tests: 'monobit' and 'runs'
 config = {
-  "transforms": [{"name":"xor_const","params":{"xor_value":55}}],
-  "tests": [{"name":"monobit","params":{"alpha":0.01}}]
+    "tests": [
+        {"name": "monobit"},
+        {"name": "runs"}
+    ]
 }
-out = engine.analyze(data, config)
-print(out["scorecard"])
+
+# 4. Run the analysis
+output = engine.analyze(data_bytes, config)
+
+# 5. Print the scorecard
+print("Analysis Scorecard:")
+print(json.dumps(output.get('scorecard'), indent=2))
 ```
 
-Yerel dokümantasyon geliştirme
+Run the script from your terminal:
+
 ```bash
-# MkDocs geliştirme sunucusu (canlı yeniden yükleme)
-mkdocs serve
-# yayın (GitHub Pages)
-mkdocs gh-deploy
+python example.py
 ```
 
-Daha fazla örnek konfigürasyon için bkz. [`docs/configs/example.yml`](docs/configs/example.yml:1) ve [`docs/configs/example.json`](docs/configs/example.json:1).
+## Launching the Web UI
+
+PatternLab includes a user-friendly web interface built with Streamlit for interactive analysis.
+
+To start it, run the following command in your terminal:
+
+```bash
+streamlit run app.py
+```
+
+Now, open your web browser and navigate to the local URL displayed in the terminal (usually `http://localhost:8501`). You can upload files, select tests, and view results interactively.
