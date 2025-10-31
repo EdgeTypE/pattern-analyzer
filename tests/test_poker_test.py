@@ -200,3 +200,110 @@ class TestPokerTest:
         assert "unique_patterns" in result.metrics
         assert "possible_patterns" in result.metrics
         assert result.metrics["unique_patterns"] <= result.metrics["possible_patterns"]
+
+    def test_hand_size_2(self):
+        """Test with minimum hand size."""
+        data = BytesView(bytes(range(256)) * 2)
+        params = {"hand_size": 2}
+        
+        result = self.plugin.run(data, params)
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["hand_size"] == 2
+        assert result.metrics["possible_patterns"] == 4  # 2^2
+
+    def test_hand_size_8(self):
+        """Test with maximum hand size."""
+        data = BytesView(bytes(range(256)) * 4)
+        params = {"hand_size": 8}
+        
+        result = self.plugin.run(data, params)
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["hand_size"] == 8
+        assert result.metrics["possible_patterns"] == 256  # 2^8
+
+    def test_streaming_with_large_chunks(self):
+        """Test streaming with large chunks."""
+        stream_plugin = PokerTest()
+        data_bytes = bytearray()
+        for i in range(500):
+            data_bytes.append((i * 137) % 256)
+        
+        # Split into 5 large chunks
+        chunk_size = 100
+        for i in range(0, len(data_bytes), chunk_size):
+            chunk = bytes(data_bytes[i:i + chunk_size])
+            stream_plugin.update(chunk, {"hand_size": 4})
+        
+        result = stream_plugin.finalize({"hand_size": 4})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["num_hands"] == 1000  # 4000 bits / 4 bits per hand
+
+    def test_all_same_pattern(self):
+        """Test when all hands have the same pattern."""
+        data = BytesView(b'\x00' * 200)
+        params = {"hand_size": 4}
+        
+        result = self.plugin.run(data, params)
+        
+        assert result.passed is False
+        assert result.metrics["unique_patterns"] == 1
+
+    def test_category_and_p_values(self):
+        """Test category and p_values dict."""
+        data = BytesView(bytes(range(256)) * 2)
+        params = {"hand_size": 4}
+        result = self.plugin.run(data, params)
+        
+        assert result.category == "statistical"
+        assert "poker" in result.p_values
+
+    def test_degrees_of_freedom_calculation(self):
+        """Test that degrees of freedom equals 2^m - 1."""
+        test_cases = [(3, 7), (4, 15), (5, 31), (6, 63)]
+        
+        for hand_size, expected_df in test_cases:
+            data = BytesView(bytes(range(256)) * 2)
+            result = self.plugin.run(data, {"hand_size": hand_size})
+            assert result.metrics["degrees_of_freedom"] == expected_df
+
+    def test_streaming_finalize_resets_state(self):
+        """Test that finalize resets state for reuse."""
+        stream_plugin = PokerTest()
+        
+        # First run
+        stream_plugin.update(bytes(range(256)), {"hand_size": 4})
+        result1 = stream_plugin.finalize({"hand_size": 4})
+        
+        # Second run
+        stream_plugin.update(b'\x00' * 200, {"hand_size": 4})
+        result2 = stream_plugin.finalize({"hand_size": 4})
+        
+        # Results should be independent
+        assert result1.passed != result2.passed
+
+    def test_metrics_completeness(self):
+        """Test that all expected metrics are present."""
+        data = BytesView(bytes(range(256)) * 2)
+        result = self.plugin.run(data, {"hand_size": 4})
+        
+        expected_metrics = ["total_bits", "hand_size", "num_hands", 
+                           "chi_square_statistic", "degrees_of_freedom",
+                           "unique_patterns", "possible_patterns"]
+        for metric in expected_metrics:
+            assert metric in result.metrics
+
+    def test_very_large_poker_test(self):
+        """Test poker with very large dataset."""
+        data_bytes = bytearray()
+        for _ in range(400):
+            data_bytes.extend(bytes(range(256)))
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {"hand_size": 4})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["total_bits"] == 819200
+        assert 0.0 <= result.p_value <= 1.0

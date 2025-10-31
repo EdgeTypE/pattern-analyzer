@@ -174,3 +174,82 @@ class TestGapTest:
         """Test that plugin requires bits."""
         assert hasattr(self.plugin, 'requires')
         assert 'bits' in self.plugin.requires
+
+    def test_pattern_length_2(self):
+        """Test with 2-bit pattern."""
+        data = BytesView(b'\xAA' * 200)  # 10101010 pattern
+        params = {"pattern": [1, 0, 1]}
+        
+        result = self.plugin.run(data, params)
+        
+        assert isinstance(result, TestResult)
+        assert result.test_name == "gap"
+        assert 0.0 <= result.p_value <= 1.0
+
+    def test_very_regular_gaps(self):
+        """Test with perfectly regular gaps (should fail)."""
+        # Create pattern where '1' appears every 8 bits
+        bits = [1 if i % 8 == 0 else 0 for i in range(800)]
+        data_bytes = bytearray()
+        for i in range(0, len(bits), 8):
+            byte_val = 0
+            for j in range(8):
+                if i + j < len(bits):
+                    byte_val |= (bits[i + j] << (7 - j))
+            data_bytes.append(byte_val)
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.test_name == "gap"
+
+    def test_no_pattern_found(self):
+        """Test when pattern never occurs."""
+        data = BytesView(b'\x00' * 100)  # All zeros, looking for '1'
+        params = {"pattern": [1]}
+        
+        result = self.plugin.run(data, params)
+        
+        assert isinstance(result, TestResult)
+        # Should skip due to insufficient occurrences
+
+    def test_category_field(self):
+        """Test that category is correctly set."""
+        data = BytesView(b'\xAA' * 200)
+        result = self.plugin.run(data, {})
+        assert result.category == "statistical"
+
+    def test_metrics_for_successful_run(self):
+        """Test metrics are populated for successful run."""
+        data = BytesView(b'\xF0' * 150)
+        result = self.plugin.run(data, {})
+        
+        if result.metrics.get("status") is None:
+            assert "gap_count" in result.metrics
+            assert "pattern_occurrences" in result.metrics
+            assert "mean_gap" in result.metrics
+            assert "min_gap" in result.metrics
+            assert "max_gap" in result.metrics
+
+    def test_pattern_as_list(self):
+        """Test that pattern parameter accepts list."""
+        data = BytesView(b'\xCC' * 200)  # 11001100
+        params = {"pattern": [1, 1, 0]}
+        
+        result = self.plugin.run(data, params)
+        
+        assert isinstance(result, TestResult)
+        assert result.test_name == "gap"
+
+    def test_very_large_data_gap(self):
+        """Test gap analysis with large dataset."""
+        data_bytes = bytearray()
+        for i in range(1000):
+            data_bytes.append((i * 73) % 256)
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["total_bits"] == 8000

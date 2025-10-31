@@ -167,3 +167,91 @@ class TestKolmogorovSmirnovTest:
         assert result.test_name == "kolmogorov_smirnov"
         assert 0.0 <= result.p_value <= 1.0
         assert result.metrics["total_bytes"] == 300
+
+    def test_ascending_sequence(self):
+        """Test with strictly ascending byte sequence."""
+        data = BytesView(bytes(range(256)))
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert 0.0 <= result.p_value <= 1.0
+        assert result.metrics["total_bytes"] == 256
+
+    def test_descending_sequence(self):
+        """Test with strictly descending byte sequence."""
+        data = BytesView(bytes(range(255, -1, -1)))
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert 0.0 <= result.p_value <= 1.0
+        assert result.metrics["total_bytes"] == 256
+
+    def test_very_large_sample(self):
+        """Test K-S with very large sample."""
+        data_bytes = bytearray()
+        for _ in range(500):
+            data_bytes.extend(bytes(range(256)))
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["total_bytes"] == 128000
+        assert 0.0 <= result.p_value <= 1.0
+
+    def test_single_value_repeated(self):
+        """Test with single value repeated many times."""
+        data = BytesView(b'\x80' * 1000)
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.passed is False
+        assert result.p_value < 0.01
+
+    def test_category_and_p_values(self):
+        """Test that category and p_values are set correctly."""
+        data = BytesView(bytes(range(256)) * 5)
+        result = self.plugin.run(data, {})
+        
+        assert result.category == "statistical"
+        assert "kolmogorov_smirnov" in result.p_values
+        assert result.p_values["kolmogorov_smirnov"] == result.p_value
+
+    def test_ks_statistic_zero_for_perfect_uniform(self):
+        """Test that perfect uniform distribution has very low K-S statistic."""
+        data_bytes = bytearray()
+        for i in range(256):
+            data_bytes.extend([i] * 100)
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {})
+        
+        # For perfect uniform, K-S statistic should be very small
+        assert result.metrics["ks_statistic"] < 0.01
+
+    def test_two_byte_values(self):
+        """Test with only two different byte values."""
+        data = BytesView(b'\x00\xFF' * 500)
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.passed is False
+        assert result.metrics["total_bytes"] == 1000
+
+    def test_metrics_completeness(self):
+        """Test that all expected metrics are present."""
+        data = BytesView(bytes(range(100)))
+        result = self.plugin.run(data, {})
+        
+        expected_metrics = ["total_bytes", "ks_statistic", "max_deviation"]
+        for metric in expected_metrics:
+            assert metric in result.metrics
+
+    def test_lower_half_bytes_only(self):
+        """Test with only lower half of byte range (0-127)."""
+        data = BytesView(bytes(range(128)) * 10)
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.passed is False  # Should fail as not uniform over full range
+        assert 0.0 <= result.p_value <= 1.0

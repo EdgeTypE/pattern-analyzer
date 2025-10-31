@@ -172,3 +172,121 @@ class TestChiSquareTest:
         data = BytesView(bytes(range(256)) * 10)
         result = self.plugin.run(data, {})
         assert result.metrics["degrees_of_freedom"] == 255
+
+    def test_very_large_data(self):
+        """Test with very large data sample."""
+        # Create 100KB of uniform data
+        data_bytes = bytearray()
+        for _ in range(400):
+            data_bytes.extend(bytes(range(256)))
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.test_name == "chi_square"
+        assert result.passed is True
+        assert 0.0 <= result.p_value <= 1.0
+        assert result.metrics["total_bytes"] == 102400
+
+    def test_single_byte(self):
+        """Test with single byte of data."""
+        data = BytesView(b'\xFF')
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.test_name == "chi_square"
+        assert 0.0 <= result.p_value <= 1.0
+        assert result.metrics["total_bytes"] == 1
+
+    def test_two_values_only(self):
+        """Test with data containing only two different byte values."""
+        data = BytesView(b'\x00\xFF' * 500)
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.test_name == "chi_square"
+        assert result.passed is False
+        assert result.metrics["unique_bytes"] == 2
+        assert result.metrics["total_bytes"] == 1000
+
+    def test_streaming_empty_chunks(self):
+        """Test streaming with some empty chunks."""
+        stream_plugin = ChiSquareTest()
+        
+        stream_plugin.update(b'', {})
+        stream_plugin.update(bytes(range(256)), {})
+        stream_plugin.update(b'', {})
+        stream_plugin.update(bytes(range(256)), {})
+        
+        result = stream_plugin.finalize({})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["total_bytes"] == 512
+
+    def test_streaming_single_byte_chunks(self):
+        """Test streaming with very small chunks."""
+        stream_plugin = ChiSquareTest()
+        
+        for i in range(256):
+            for _ in range(10):
+                stream_plugin.update(bytes([i]), {})
+        
+        result = stream_plugin.finalize({})
+        
+        assert isinstance(result, TestResult)
+        assert result.passed is True
+        assert result.metrics["total_bytes"] == 2560
+
+    def test_multiple_finalize_calls(self):
+        """Test that multiple finalize calls reset state."""
+        stream_plugin = ChiSquareTest()
+        
+        # First run
+        stream_plugin.update(bytes(range(256)), {})
+        result1 = stream_plugin.finalize({})
+        
+        # Second run should start fresh
+        stream_plugin.update(b'\x00' * 1000, {})
+        result2 = stream_plugin.finalize({})
+        
+        assert result1.metrics["total_bytes"] == 256
+        assert result2.metrics["total_bytes"] == 1000
+        assert result1.passed != result2.passed
+
+    def test_category_field(self):
+        """Test that category is correctly set."""
+        data = BytesView(bytes(range(100)))
+        result = self.plugin.run(data, {})
+        assert result.category == "statistical"
+
+    def test_p_values_dict(self):
+        """Test that p_values dictionary is populated."""
+        data = BytesView(bytes(range(256)) * 10)
+        result = self.plugin.run(data, {})
+        assert "chi_square" in result.p_values
+        assert result.p_values["chi_square"] == result.p_value
+
+    def test_metrics_completeness(self):
+        """Test that all expected metrics are present."""
+        data = BytesView(bytes(range(256)) * 10)
+        result = self.plugin.run(data, {})
+        
+        expected_metrics = ["total_bytes", "chi_square_statistic", 
+                           "degrees_of_freedom", "unique_bytes"]
+        for metric in expected_metrics:
+            assert metric in result.metrics
+
+    def test_near_uniform_distribution(self):
+        """Test with near-uniform but slightly skewed distribution."""
+        data_bytes = bytearray()
+        for i in range(256):
+            count = 100 + (i % 3)  # Slight variation
+            data_bytes.extend([i] * count)
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {})
+        
+        assert isinstance(result, TestResult)
+        assert result.test_name == "chi_square"
+        assert 0.0 <= result.p_value <= 1.0

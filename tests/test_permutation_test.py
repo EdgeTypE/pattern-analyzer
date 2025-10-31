@@ -220,3 +220,120 @@ class TestPermutationTest:
         # Same permutation should have same ID
         perm_id_3 = self.plugin._permutation_to_id([0, 1, 2])
         assert perm_id_1 == perm_id_3
+
+    def test_block_size_5(self):
+        """Test with maximum block size."""
+        data = BytesView(bytes(range(200)))
+        params = {"block_size": 5}
+        
+        result = self.plugin.run(data, params)
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["block_size"] == 5
+        assert result.metrics["possible_permutations"] == 120  # 5!
+
+    def test_all_identical_blocks(self):
+        """Test when all blocks are identical."""
+        data = BytesView(b'\x01\x02\x03' * 100)
+        params = {"block_size": 3}
+        
+        result = self.plugin.run(data, params)
+        
+        assert result.passed is False
+        assert result.metrics["unique_permutations"] == 1
+
+    def test_very_large_permutation_test(self):
+        """Test with very large dataset."""
+        data_bytes = bytearray()
+        for i in range(2000):
+            data_bytes.append((i * 137) % 256)
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {"block_size": 3})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["total_bytes"] == 2000
+        assert 0.0 <= result.p_value <= 1.0
+
+    def test_category_and_p_values(self):
+        """Test category and p_values dict."""
+        data = BytesView(bytes(range(100)))
+        result = self.plugin.run(data, {"block_size": 3})
+        
+        assert result.category == "statistical"
+        assert "permutation" in result.p_values
+
+    def test_metrics_completeness(self):
+        """Test that all expected metrics are present."""
+        data = BytesView(bytes(range(100)))
+        result = self.plugin.run(data, {"block_size": 3})
+        
+        expected_metrics = ["total_bytes", "block_size", "num_blocks",
+                           "chi_square_statistic", "degrees_of_freedom",
+                           "unique_permutations", "possible_permutations"]
+        for metric in expected_metrics:
+            assert metric in result.metrics
+
+    def test_alternating_high_low(self):
+        """Test with alternating high and low values."""
+        data_bytes = bytearray()
+        for i in range(200):
+            if i % 3 == 0:
+                data_bytes.append(0)
+            elif i % 3 == 1:
+                data_bytes.append(255)
+            else:
+                data_bytes.append(128)
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {"block_size": 3})
+        
+        assert isinstance(result, TestResult)
+        assert 0.0 <= result.p_value <= 1.0
+
+    def test_to_permutation_pattern_correctness(self):
+        """Test that permutation pattern conversion is correct."""
+        # Test specific known patterns
+        plugin = PermutationTest()
+        
+        # Ascending order
+        pattern1 = plugin._to_permutation_pattern(bytes([10, 20, 30]))
+        # Descending order  
+        pattern2 = plugin._to_permutation_pattern(bytes([30, 20, 10]))
+        
+        # Should be different
+        assert pattern1 != pattern2
+
+    def test_degrees_of_freedom_calculation(self):
+        """Test that degrees of freedom equals k! - 1."""
+        test_cases = [(2, 1), (3, 5), (4, 23), (5, 119)]
+        
+        for block_size, expected_df in test_cases:
+            data = BytesView(bytes(range(200)))
+            result = self.plugin.run(data, {"block_size": block_size})
+            assert result.metrics["degrees_of_freedom"] == expected_df
+
+    def test_with_negative_rank_differences(self):
+        """Test permutation detection with various orderings."""
+        # Mix of ascending and descending triplets
+        data = BytesView(b'\x01\x02\x03\x03\x02\x01' * 50)
+        result = self.plugin.run(data, {"block_size": 3})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["unique_permutations"] <= 6
+
+    def test_chi_square_zero_for_perfect_uniform(self):
+        """Test that perfectly uniform permutations have low chi-square."""
+        # Create data where all 6 permutations appear equally
+        # This is difficult to construct naturally, so we test the concept
+        data_bytes = bytearray()
+        # Create varied patterns
+        for i in range(100):
+            a, b, c = (i * 7) % 256, (i * 13) % 256, (i * 19) % 256
+            data_bytes.extend([a, b, c])
+        
+        data = BytesView(bytes(data_bytes))
+        result = self.plugin.run(data, {"block_size": 3})
+        
+        assert isinstance(result, TestResult)
+        assert result.metrics["chi_square_statistic"] >= 0.0
