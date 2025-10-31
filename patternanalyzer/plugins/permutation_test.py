@@ -93,6 +93,9 @@ class PermutationTest(TestPlugin):
         # Calculate p-value
         p_value = 1.0 - self._chi_square_cdf(chi_square, df)
         
+        # Ensure p_value is in valid range [0, 1]
+        p_value = max(0.0, min(1.0, p_value))
+        
         # Determine if test passed
         alpha = float(params.get("alpha", 0.01))
         passed = p_value > alpha

@@ -55,7 +55,7 @@ class ChiSquareTest(TestPlugin):
         observed_bytes = len(counter)
         missing_bytes = 256 - observed_bytes
         if missing_bytes > 0:
-            chi_square += missing_bytes * (expected ** 2 / expected)
+            chi_square += missing_bytes * expected
         
         # Degrees of freedom = 256 - 1 = 255
         df = 255
@@ -116,7 +116,7 @@ class ChiSquareTest(TestPlugin):
         observed_bytes = len(counter)
         missing_bytes = 256 - observed_bytes
         if missing_bytes > 0:
-            chi_square += missing_bytes * (expected ** 2 / expected)
+            chi_square += missing_bytes * expected
         
         # Degrees of freedom = 256 - 1 = 255
         df = 255
