@@ -100,6 +100,11 @@ pdf_structure = "patternanalyzer.plugins.pdf_structure:PDFStructure"
 ecb_detector = "patternanalyzer.plugins.ecb_detector:ECBDetector"
 frequency_pattern = "patternanalyzer.plugins.frequency_pattern:FrequencyPattern"
 known_constants_search = "patternanalyzer.plugins.known_constants_search:KnownConstantsSearch"
+chi_square = "patternanalyzer.plugins.chi_square:ChiSquareTest"
+kolmogorov_smirnov = "patternanalyzer.plugins.kolmogorov_smirnov:KolmogorovSmirnovTest"
+gap = "patternanalyzer.plugins.gap_test:GapTest"
+poker = "patternanalyzer.plugins.poker_test:PokerTest"
+permutation = "patternanalyzer.plugins.permutation_test:PermutationTest"
 
 [project.urls]
 Homepage = "https://github.com/EdgeTypE/pattern-analyzer"
