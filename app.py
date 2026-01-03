@@ -4,7 +4,297 @@ import pandas as pd
 import json
 from patternanalyzer.engine import Engine
 
-st.set_page_config(page_title="Pattern Analyzer Analizi", layout="wide", page_icon="🔬")
+st.set_page_config(page_title="Pattern Analyzer", layout="wide", page_icon="🔬")
+
+# Modern Custom CSS Theme
+st.markdown("""
+<style>
+/* Global Theme Variables */
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --warning-gradient: linear-gradient(135deg, #F2994A 0%, #F2C94C 100%);
+    --danger-gradient: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    --dark-bg: #0f0f23;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+}
+
+/* Main container styling */
+.stApp {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+/* Header styling */
+.main-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.sub-header {
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    font-weight: 400;
+}
+
+/* Modern card styling */
+.modern-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.modern-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+}
+
+/* Metric cards */
+.metric-card {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.metric-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+/* Section headers */
+.section-header {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Sidebar styling */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f23 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+section[data-testid="stSidebar"] .stSelectbox label,
+section[data-testid="stSidebar"] .stMultiSelect label,
+section[data-testid="stSidebar"] .stSlider label {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+}
+
+/* Button styling */
+.stButton > button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.stButton > button[kind="secondary"] {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Input fields */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: white;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Select boxes */
+.stSelectbox > div > div,
+.stMultiSelect > div > div {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+/* Expander styling */
+.streamlit-expanderHeader {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    color: white !important;
+}
+
+/* DataFrame styling */
+.stDataFrame {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Tab styling */
+.stTabs [data-baseweb="tab-list"] {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 0.25rem;
+    gap: 0.5rem;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background: transparent;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* Slider styling */
+.stSlider > div > div > div {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* File uploader */
+.stFileUploader > div {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px dashed rgba(102, 126, 234, 0.5);
+    border-radius: 12px;
+}
+
+.stFileUploader > div:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+/* Spinner */
+.stSpinner > div {
+    border-top-color: #667eea !important;
+}
+
+/* Success/Error/Warning messages */
+.stSuccess {
+    background: rgba(17, 153, 142, 0.2);
+    border-left: 4px solid #11998e;
+}
+
+.stError {
+    background: rgba(238, 9, 121, 0.2);
+    border-left: 4px solid #ee0979;
+}
+
+.stWarning {
+    background: rgba(242, 153, 74, 0.2);
+    border-left: 4px solid #F2994A;
+}
+
+/* Animation for loading */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading {
+    animation: pulse 2s infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #7b8eeb 0%, #8a5bb3 100%);
+}
+
+/* Status badges */
+.status-passed {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-failed {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-skipped {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+</style>
+""", unsafe_allow_html=True)
 
 engine = Engine()
 
@@ -270,27 +560,44 @@ def main():
         }
     }[st.session_state.language]
 
-    # Main content
+    # Main content with modern header
     st.markdown(f"""
-        <h1 id="pattern-lab-analiz-platformu">{lang['main_title']}</h1>
+        <div style="text-align: center; padding: 2rem 0;">
+            <h1 class="main-header">🔬 {lang['main_title']}</h1>
+            <p class="sub-header">{lang['main_desc']}</p>
+        </div>
     """, unsafe_allow_html=True)
-    st.write(lang['main_desc'])
+    
     st.markdown(f"""
-        <h2 id="analiz-sonuclari">{lang['results_title']}</h2>
+        <div class="section-header">
+            <span>📊</span> {lang['results_title']}
+        </div>
     """, unsafe_allow_html=True)
 
-    # Sidebar
+    # Sidebar with modern styling
     with st.sidebar:
+        # Sidebar header with logo
+        st.markdown("""
+            <div style="text-align: center; padding: 1rem 0 1.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.5rem;">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔬</div>
+                <div style="font-size: 1.1rem; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Pattern Analyzer</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
         # Language selector
-        selected_lang = st.selectbox(lang['language'], options=["tr", "en"], format_func=lambda x: "Türkçe" if x == "tr" else "English", index=0 if st.session_state.language == "tr" else 1)
+        selected_lang = st.selectbox(f"🌐 {lang['language']}", options=["tr", "en"], format_func=lambda x: "🇹🇷 Türkçe" if x == "tr" else "🇬🇧 English", index=0 if st.session_state.language == "tr" else 1)
         if selected_lang != st.session_state.language:
             st.session_state.language = selected_lang
             st.rerun()
 
-        st.header(lang['control_panel'])
-        # st.divider()
+        st.markdown(f"""
+            <div style="font-size: 1.1rem; font-weight: 600; color: #fff; margin: 1.5rem 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span>⚙️</span> {lang['control_panel']}
+            </div>
+        """, unsafe_allow_html=True)
+        
         # Tabs for input
-        tab1, tab2 = st.tabs([lang['file_tab'], lang['text_tab']])
+        tab1, tab2 = st.tabs([f"📁 {lang['file_tab']}", f"📝 {lang['text_tab']}"])
 
         with tab1:
             uploaded_file = st.file_uploader(
@@ -306,7 +613,11 @@ def main():
                 height=100
             )
 
-        st.subheader(lang['test_selection'])
+        st.markdown(f"""
+            <div style="font-size: 1rem; font-weight: 600; color: #fff; margin: 1.5rem 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🧪</span> {lang['test_selection']}
+            </div>
+        """, unsafe_allow_html=True)
         available_tests = engine.get_available_tests()
         default_tests = ["monobit", "approximate_entropy", "autocorrelation"]  # From HTML
 
@@ -321,22 +632,26 @@ def main():
         )
 
         # Test açıklamaları için expander
-        with st.expander("Test Açıklamaları" if st.session_state.language == "tr" else "Test Explanations"):
+        with st.expander("📖 " + ("Test Açıklamaları" if st.session_state.language == "tr" else "Test Explanations")):
             for test in available_tests:
                 desc = lang['test_explanations'].get(test, "Açıklama yok." if st.session_state.language == "tr" else "No description.")
-                st.write(f"**{test}**: {desc}")
+                st.markdown(f"**`{test}`**: {desc}")
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button(lang['all_tests']):
+            if st.button(f"✅ {lang['all_tests']}", use_container_width=True):
                 st.session_state.selected_tests = available_tests
                 st.rerun()
         with col2:
-            if st.button(lang['no_tests']):
+            if st.button(f"❌ {lang['no_tests']}", use_container_width=True):
                 st.session_state.selected_tests = []
                 st.rerun()
 
-        st.subheader(lang['transform_selection'])
+        st.markdown(f"""
+            <div style="font-size: 1rem; font-weight: 600; color: #fff; margin: 1.5rem 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔄</span> {lang['transform_selection']}
+            </div>
+        """, unsafe_allow_html=True)
         available_transforms = engine.get_available_transforms()
 
         if 'selected_transforms' not in st.session_state:
@@ -351,15 +666,19 @@ def main():
 
         col3, col4 = st.columns(2)
         with col3:
-            if st.button(lang['all_transforms']):
+            if st.button(f"✅ {lang['all_transforms']}", use_container_width=True):
                 st.session_state.selected_transforms = available_transforms
                 st.rerun()
         with col4:
-            if st.button(lang['no_transforms']):
+            if st.button(f"❌ {lang['no_transforms']}", use_container_width=True):
                 st.session_state.selected_transforms = []
                 st.rerun()
 
-        st.subheader(lang['analysis_settings'])
+        st.markdown(f"""
+            <div style="font-size: 1rem; font-weight: 600; color: #fff; margin: 1.5rem 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span>⚡</span> {lang['analysis_settings']}
+            </div>
+        """, unsafe_allow_html=True)
         fdr_q = st.slider(
             lang['fdr_label'],
             min_value=0.01,
@@ -370,11 +689,12 @@ def main():
             help=lang.get('fdr_help', '')
         )
 
+        st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
         col5, col6 = st.columns(2)
         with col5:
-            start_button = st.button(lang['start_analysis'], type="primary")
+            start_button = st.button(f"🚀 {lang['start_analysis']}", type="primary", use_container_width=True)
         with col6:
-            clear_button = st.button(lang['clear'], type="secondary")
+            clear_button = st.button(f"🗑️ {lang['clear']}", type="secondary", use_container_width=True)
 
     # Handle buttons
     if clear_button:
@@ -410,7 +730,7 @@ def main():
     if 'analysis_result' in st.session_state:
         result = st.session_state['analysis_result']
         if isinstance(result, dict) and 'error' in result:
-            st.error(result['error'])
+            st.error(f"❌ {result['error']}")
         else:
             # Compute additional stats
             results = result.get('results', []) if isinstance(result, dict) else []
@@ -418,21 +738,63 @@ def main():
             run_tests = sum(1 for r in results if r.get('status') != 'skipped')
             skipped_tests = total_tests - run_tests
             failed_tests = sum(1 for r in results if not r.get('passed', True) and r.get('status') != 'skipped')
+            passed_tests = run_tests - failed_tests
 
-            # scorecard'ı st.metric ile göster
+            # Modern scorecard with cards
             scorecard = result.get('scorecard', {}) if isinstance(result, dict) else {}
-            if scorecard:
-                st.subheader(lang['scorecard'])
-                # Custom metrics
+            if scorecard or results:
+                st.markdown(f"""
+                    <div class="section-header">
+                        <span>📈</span> {lang['scorecard']}
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Modern metric cards
                 cols = st.columns(5)
-                cols[0].metric(lang['failed_tests'], f"{failed_tests} / {total_tests}")
-                cols[1].metric(lang['mean_effect_size'], format_val(scorecard.get('mean_effect_size', 'None')), help=lang.get('mean_effect_size_desc', ''))
-                cols[2].metric(lang['p_value_distribution'], format_val(scorecard.get('p_value_distribution', {}), max_len=40), help=lang.get('p_value_distribution_desc', ''))
-                cols[3].metric(lang['run_tests'], run_tests)
-                cols[4].metric(lang['skipped_tests'], skipped_tests, help=lang.get('skipped_tests_desc', ''))
+                with cols[0]:
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <div class="metric-value" style="color: {'#38ef7d' if failed_tests == 0 else '#ff6a00'};">{passed_tests}/{total_tests}</div>
+                            <div class="metric-label">✅ {"Başarılı" if st.session_state.language == "tr" else "Passed"}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                with cols[1]:
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <div class="metric-value" style="color: {'#ff6a00' if failed_tests > 0 else '#38ef7d'};">{failed_tests}</div>
+                            <div class="metric-label">❌ {lang['failed_tests']}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                with cols[2]:
+                    effect_size_val = format_val(scorecard.get('mean_effect_size', 'N/A'))
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <div class="metric-value">{effect_size_val}</div>
+                            <div class="metric-label">📊 {lang['mean_effect_size']}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                with cols[3]:
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <div class="metric-value">{run_tests}</div>
+                            <div class="metric-label">🔬 {lang['run_tests']}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                with cols[4]:
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <div class="metric-value">{skipped_tests}</div>
+                            <div class="metric-label">⏭️ {lang['skipped_tests']}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
             if results:
-                st.subheader(lang['findings'])
+                st.markdown(f"""
+                    <div class="section-header" style="margin-top: 2rem;">
+                        <span>🔍</span> {lang['findings']}
+                    </div>
+                """, unsafe_allow_html=True)
+                
                 df = pd.DataFrame(results)
                 # Reindex to include all possible columns
                 expected_columns = [
@@ -447,42 +809,61 @@ def main():
                 if 'p_value' in df.columns:
                     def _p_style(v):
                         try:
-                            return 'background-color: red' if float(v) < fdr_q else ''
+                            return 'background-color: rgba(238, 9, 121, 0.3); color: #ff6a00;' if float(v) < fdr_q else 'background-color: rgba(17, 153, 142, 0.2); color: #38ef7d;'
                         except Exception:
                             return ''
                     styled = df.style.map(_p_style, subset=['p_value'])
                     st.dataframe(styled, column_config={
                         col: st.column_config.TextColumn(help=lang['column_explanations'].get(col, '')) for col in expected_columns
-                    })
+                    }, use_container_width=True)
                 else:
                     st.dataframe(df, column_config={
                         col: st.column_config.TextColumn(help=lang['column_explanations'].get(col, '')) for col in expected_columns
-                    })
+                    }, use_container_width=True)
 
                 # Select a result for details
+                st.markdown(f"""
+                    <div class="section-header" style="margin-top: 2rem;">
+                        <span>🎯</span> {lang['select_result']}
+                    </div>
+                """, unsafe_allow_html=True)
                 option_labels = [f"{i} - {r.get('test_name', 'Unknown')}" for i, r in enumerate(results)]
-                selected_label = st.selectbox(lang['select_result'], options=option_labels)
+                selected_label = st.selectbox("", options=option_labels, label_visibility="collapsed")
                 if selected_label:
                     selected_idx = int(selected_label.split(" - ")[0])
                     selected_result = results[selected_idx]
-                    st.subheader(lang['selected_details'])
+                    
+                    # Modern card for selected result
+                    st.markdown(f"""
+                        <div class="section-header">
+                            <span>📋</span> {lang['selected_details']}
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Display result in a modern card
+                    st.markdown('<div class="modern-card">', unsafe_allow_html=True)
                     st.json(selected_result)
+                    st.markdown('</div>', unsafe_allow_html=True)
 
                     # Test-specific explanation
                     test_name = selected_result.get('test_name')
                     desc = lang['test_explanations'].get(test_name, "Açıklama yok." if st.session_state.language == "tr" else "No description.")
-                    st.write(f"**Test Açıklaması**: {desc}")
+                    st.info(f"💡 **{'Test Açıklaması' if st.session_state.language == 'tr' else 'Test Description'}**: {desc}")
 
                     # If skipped or error, show reason
                     status = selected_result.get('status')
                     if status == 'skipped' or status == 'error':
                         reason = selected_result.get('reason', 'Bilinmeyen neden' if st.session_state.language == "tr" else 'Unknown reason')
-                        st.warning(f"Bu test {status} oldu. Neden: {reason}")
+                        st.warning(f"⚠️ {'Bu test' if st.session_state.language == 'tr' else 'This test'} {status} {'oldu. Neden' if st.session_state.language == 'tr' else '. Reason'}: {reason}")
 
                     # Visuals if any
                     visuals = selected_result.get('visuals', {})
                     if visuals:
-                        st.subheader(lang['visuals'])
+                        st.markdown(f"""
+                            <div class="section-header" style="margin-top: 1.5rem;">
+                                <span>🖼️</span> {lang['visuals']}
+                            </div>
+                        """, unsafe_allow_html=True)
                         for vname, vdata in visuals.items():
                             if isinstance(vdata, dict):
                                 if 'data_base64' in vdata:
@@ -490,8 +871,13 @@ def main():
                                         mime = vdata.get('mime', 'image/svg+xml')
                                         base64_data = vdata['data_base64']
                                         if mime == 'image/svg+xml':
-                                            # Display SVG using markdown
-                                            st.markdown(f'<img src="data:image/svg+xml;base64,{base64_data}" alt="{vname}">', unsafe_allow_html=True)
+                                            # Display SVG using markdown with modern styling
+                                            st.markdown(f'''
+                                                <div class="modern-card" style="text-align: center;">
+                                                    <img src="data:image/svg+xml;base64,{base64_data}" alt="{vname}" style="max-width: 100%; border-radius: 8px;">
+                                                    <p style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">{vname}</p>
+                                                </div>
+                                            ''', unsafe_allow_html=True)
                                         else:
                                             img_data = base64.b64decode(base64_data)
                                             st.image(img_data, caption=vname, use_container_width=True)

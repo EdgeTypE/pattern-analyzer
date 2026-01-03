@@ -3,63 +3,551 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pattern Analyzer UI</title>
+<title>Pattern Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-body{font-family:Segoe UI,Roboto,Arial,sans-serif;margin:0;padding:0;background:#f7f9fb;color:#222}
-.container{max-width:980px;margin:24px auto;padding:20px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-h1{margin:0 0 12px;font-size:20px}
-.row{display:flex;gap:12px;align-items:flex-start}
-.col{flex:1}
-label{display:block;margin-bottom:6px;font-weight:600}
-input[type=file],textarea,input,select{width:100%;padding:8px;border:1px solid #dfe6ee;border-radius:6px}
-textarea{min-height:100px;font-family:monospace}
-button{padding:8px 12px;border:0;border-radius:6px;background:#0066cc;color:#fff;cursor:pointer}
-button.secondary{background:#6c757d}
-pre{background:#0b1220;color:#e6eef6;padding:12px;border-radius:6px;overflow:auto;max-height:360px}
-.status{margin-top:12px;padding:10px;border-radius:6px;background:#f1f7ff;color:#034;display:inline-block}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.1);border-top-color:#0066cc;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;vertical-align:middle}
-@keyframes spin{to{transform:rotate(360deg)}}
-.artefacts img{max-width:100%;border:1px solid #e5eef6;border-radius:6px;margin:8px 0}
+:root {
+    --primary: #667eea;
+    --primary-dark: #5a67d8;
+    --secondary: #764ba2;
+    --accent: #38ef7d;
+    --danger: #ff6a00;
+    --bg-dark: #0f0f23;
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --bg-glass: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.1);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --gradient-danger: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 40px rgba(102, 126, 234, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.logo {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.5));
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    font-weight: 400;
+}
+
+/* Cards */
+.card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+    border-color: rgba(102, 126, 234, 0.4);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.card-icon {
+    font-size: 1.5rem;
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Form Elements */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+label .icon {
+    font-size: 1.1rem;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 2px dashed rgba(102, 126, 234, 0.4);
+    border-radius: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+input[type="file"]:hover {
+    border-color: var(--primary);
+    background: rgba(102, 126, 234, 0.1);
+}
+
+input[type="file"]::file-selector-button {
+    background: var(--gradient-primary);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 16px;
+    transition: all 0.3s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+    transform: scale(1.02);
+}
+
+select, textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    resize: vertical;
+}
+
+select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+textarea {
+    min-height: 100px;
+    font-family: 'Fira Code', 'Monaco', monospace;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 18px;
+    padding-right: 40px;
+}
+
+option {
+    background: #1a1a2e;
+    color: white;
+}
+
+/* Buttons */
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+button {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+button.primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+}
+
+button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+}
+
+button.primary:active {
+    transform: translateY(0);
+}
+
+button.secondary {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+button.secondary:hover {
+    background: var(--bg-glass);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+/* Status */
+.status-area {
+    margin-top: 20px;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    background: rgba(102, 126, 234, 0.15);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.status.success {
+    background: rgba(56, 239, 125, 0.15);
+    border-color: rgba(56, 239, 125, 0.3);
+    color: var(--accent);
+}
+
+.status.error {
+    background: rgba(255, 106, 0, 0.15);
+    border-color: rgba(255, 106, 0, 0.3);
+    color: var(--danger);
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(102, 126, 234, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Results Section */
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.result-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+pre {
+    background: linear-gradient(135deg, #0b1220 0%, #151b2e 100%);
+    color: #e6eef6;
+    padding: 24px;
+    border-radius: 16px;
+    overflow: auto;
+    max-height: 500px;
+    font-family: 'Fira Code', 'Monaco', monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    border: 1px solid var(--border);
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+pre::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+pre::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb {
+    background: var(--gradient-primary);
+    border-radius: 4px;
+}
+
+.artefacts {
+    margin-top: 24px;
+}
+
+.artefacts img {
+    max-width: 100%;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    margin: 12px 0;
+    box-shadow: var(--shadow);
+}
+
+.artefacts iframe {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+
+.artefacts a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    text-decoration: none;
+    padding: 12px 20px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+    margin: 8px 8px 8px 0;
+}
+
+.artefacts a:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state .icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.footer a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 24px 16px;
+    }
+    
+    .title {
+        font-size: 1.8rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    button {
+        justify-content: center;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.2s; }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Pattern Analyzer - Basit Web UI</h1>
-<p>Kısa: dosya yükleyin veya base64 verisi yapıştırın, ardından "Analyze" tuşuna basın. Arka planda çalışan job durumunu göstereceğiz.</p>
-<div class="row" style="margin-bottom:12px">
-<div class="col">
-<label for="file">Dosya yükle</label>
-<input id="file" type="file" />
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">🔬</div>
+        <h1 class="title">Pattern Analyzer</h1>
+        <p class="subtitle">Binary veri analizi için güçlü istatistiksel testler. Dosya yükleyin veya base64 verisi yapıştırın ve kapsamlı bir analiz raporu elde edin.</p>
+    </header>
+
+    <!-- Input Card -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-icon">📁</span>
+            <span class="card-title">Veri Girişi</span>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>
+                    <span class="icon">📂</span>
+                    Dosya Yükle
+                </label>
+                <input id="file" type="file" accept=".bin,.txt,.dat" />
+            </div>
+            <div class="form-group" style="margin-bottom: 0; width: 200px;">
+                <label>
+                    <span class="icon">⚙️</span>
+                    Profil
+                </label>
+                <select id="profile">
+                    <option value="">Varsayılan</option>
+                    <option value="quick">⚡ Hızlı</option>
+                    <option value="nist">📊 NIST</option>
+                    <option value="crypto">🔐 Kripto</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <span class="icon">📝</span>
+                Veya Base64 Verisi Yapıştırın
+            </label>
+            <textarea id="base64" placeholder="Base64 kodlu veriyi buraya yapıştırın..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <span class="icon">🔧</span>
+                JSON Konfigürasyon (İsteğe Bağlı)
+            </label>
+            <textarea id="config" placeholder='{"tests": ["monobit", "runs"], "transforms": []}'></textarea>
+        </div>
+        
+        <div class="btn-group">
+            <button id="analyzeBtn" class="primary">
+                <span>🚀</span>
+                Analiz Başlat
+            </button>
+            <button id="clearBtn" class="secondary">
+                <span>🗑️</span>
+                Temizle
+            </button>
+        </div>
+        
+        <div id="statusArea" class="status-area"></div>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-icon">📊</span>
+            <span class="card-title">Analiz Sonuçları</span>
+        </div>
+        
+        <div id="resultWrap">
+            <div class="empty-state" id="emptyState">
+                <div class="icon">📋</div>
+                <p>Henüz analiz yapılmadı. Yukarıdan dosya yükleyin veya veri girin.</p>
+            </div>
+            <pre id="resultPre" style="display: none;"></pre>
+            <div class="artefacts" id="artefacts"></div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Pattern Analyzer &copy; 2024 — Built with ❤️ for data analysis</p>
+    </footer>
 </div>
-<div style="width:160px">
-<label for="profile">Profil</label>
-<select id="profile">
-<option value="">(varsayılan)</option>
-<option value="quick">quick</option>
-<option value="nist">nist</option>
-<option value="crypto">crypto</option>
-</select>
-</div>
-</div>
-<div style="margin-bottom:12px">
-<label for="base64">Veya Base64 verisini yapıştırın</label>
-<textarea id="base64" placeholder="base64 verisi..."></textarea>
-</div>
-<div style="margin-bottom:12px">
-<label for="config">İsteğe bağlı JSON config (tests/transforms)</label>
-<textarea id="config" placeholder='{"tests":["monobit"]}'></textarea>
-</div>
-<div style="display:flex;gap:8px">
-<button id="analyzeBtn">Analyze</button>
-<button id="clearBtn" class="secondary">Temizle</button>
-</div>
-<div id="statusArea" style="margin-top:12px"></div>
-<h2 style="margin-top:18px">Sonuç</h2>
-<div id="resultWrap">
-<pre id="resultPre">Henüz analiz yapılmadı.</pre>
-<div class="artefacts" id="artefacts"></div>
-</div>
-</div>
+
 <script>
 (function(){
 const analyzeBtn = document.getElementById('analyzeBtn');
@@ -71,151 +559,161 @@ const profileSelect = document.getElementById('profile');
 const statusArea = document.getElementById('statusArea');
 const resultPre = document.getElementById('resultPre');
 const artefactsEl = document.getElementById('artefacts');
+const emptyState = document.getElementById('emptyState');
 
-function setStatus(msg, busy=false){
-  statusArea.innerHTML = busy ? '<span class="spinner"></span><span class="status">'+msg+'</span>' : '<span class="status">'+msg+'</span>';
+function setStatus(msg, type='info', busy=false){
+    let statusClass = '';
+    if (type === 'success') statusClass = 'success';
+    else if (type === 'error') statusClass = 'error';
+    
+    statusArea.innerHTML = `
+        <div class="status ${statusClass}">
+            ${busy ? '<span class="spinner"></span>' : ''}
+            <span>${msg}</span>
+        </div>
+    `;
 }
 
 function clearResult(){
-  resultPre.textContent = '';
-  artefactsEl.innerHTML = '';
+    resultPre.style.display = 'none';
+    resultPre.textContent = '';
+    artefactsEl.innerHTML = '';
+    emptyState.style.display = 'block';
+}
+
+function showResult(content){
+    emptyState.style.display = 'none';
+    resultPre.style.display = 'block';
+    resultPre.textContent = content;
 }
 
 clearBtn.addEventListener('click', ()=>{
-  fileInput.value = '';
-  base64Input.value = '';
-  configInput.value = '';
-  profileSelect.value = '';
-  setStatus('Temizlendi', false);
-  resultPre.textContent = 'Henüz analiz yapılmadı.';
-  artefactsEl.innerHTML = '';
+    fileInput.value = '';
+    base64Input.value = '';
+    configInput.value = '';
+    profileSelect.value = '';
+    setStatus('✨ Temizlendi', 'success', false);
+    clearResult();
 });
 
 analyzeBtn.addEventListener('click', async ()=>{
-  setStatus('Gönderiliyor...', true);
-  clearResult();
-  const file = fileInput.files && fileInput.files[0];
-  const profile = profileSelect.value || null;
-  const cfgText = configInput.value.trim();
-  let cfg = null;
-  if (cfgText){
-    try { cfg = JSON.parse(cfgText); } catch(e){ setStatus('Config JSON hatası: '+e.message); return; }
-  }
+    setStatus('📤 Gönderiliyor...', 'info', true);
+    clearResult();
+    const file = fileInput.files && fileInput.files[0];
+    const profile = profileSelect.value || null;
+    const cfgText = configInput.value.trim();
+    let cfg = null;
+    if (cfgText){
+        try { cfg = JSON.parse(cfgText); } catch(e){ setStatus('❌ Config JSON hatası: '+e.message, 'error'); return; }
+    }
 
-  try {
-    let resp;
-    if (file){
-      const fd = new FormData();
-      fd.append('file', file);
-      if (cfg) fd.append('config', new Blob([JSON.stringify(cfg)], {type:'application/json'}));
-      if (profile) {
-        const pcfg = cfg || {};
-        pcfg.profile = profile;
-        fd.set('config', new Blob([JSON.stringify(pcfg)], {type:'application/json'}));
-      }
-      resp = await fetch('/analyze', {method:'POST', body: fd});
-    } else if (base64Input.value.trim()){
-      const payload = { base64_data: base64Input.value.trim(), config: cfg || {} };
-      if (profile) payload.config.profile = profile;
-      resp = await fetch('/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-    } else {
-      setStatus('Hata: Dosya veya base64 verisi sağlayın', false);
-      return;
+    try {
+        let resp;
+        if (file){
+            const fd = new FormData();
+            fd.append('file', file);
+            if (cfg) fd.append('config', new Blob([JSON.stringify(cfg)], {type:'application/json'}));
+            if (profile) {
+                const pcfg = cfg || {};
+                pcfg.profile = profile;
+                fd.set('config', new Blob([JSON.stringify(pcfg)], {type:'application/json'}));
+            }
+            resp = await fetch('/analyze', {method:'POST', body: fd});
+        } else if (base64Input.value.trim()){
+            const payload = { base64_data: base64Input.value.trim(), config: cfg || {} };
+            if (profile) payload.config.profile = profile;
+            resp = await fetch('/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+        } else {
+            setStatus('⚠️ Lütfen dosya veya base64 verisi sağlayın', 'error', false);
+            return;
+        }
+        if (!resp.ok){
+            const txt = await resp.text();
+            setStatus('❌ Sunucu hatası: '+resp.status+' '+txt, 'error', false);
+            return;
+        }
+        const j = await resp.json();
+        const jobId = j.job_id;
+        setStatus('🔄 Job başlatıldı: '+jobId, 'info', true);
+        pollJob(jobId);
+    } catch (e){
+        setStatus('❌ İstek hatası: '+e.message, 'error', false);
     }
-    if (!resp.ok){
-      const txt = await resp.text();
-      setStatus('Sunucu hata: '+resp.status+' '+txt, false);
-      return;
-    }
-    const j = await resp.json();
-    const jobId = j.job_id;
-    setStatus('Job başlatıldı: '+jobId, true);
-    pollJob(jobId);
-  } catch (e){
-    setStatus('İstek hatası: '+e.message, false);
-  }
 });
 
 async function pollJob(jobId){
-  const url = '/report/'+jobId;
-  let finished = false;
-  while(!finished){
-    try {
-      const r = await fetch(url);
-      if (!r.ok){ setStatus('Job sorgu hatası: '+r.status); return; }
-      const j = await r.json();
-      if (j.status === 'pending' || j.status === 'running'){
-        setStatus('İşleniyor: '+j.status, true);
-        await new Promise(res=>setTimeout(res, 1000));
-        continue;
-      }
-      if (j.status === 'completed'){
-        setStatus('Tamamlandı', false);
-        const report = j.report || {};
-        resultPre.textContent = JSON.stringify(report, null, 2);
-        // If engine included html_report path in top-level, show iframe.
-        // If the path looks like a local file (not an HTTP(S) URL), route it through
-        // the API helper endpoint /artefact so browsers can fetch it via the server.
-        if (report && report.html_report){
-          const iframe = document.createElement('iframe');
-          let src = report.html_report;
-          // Treat as URL if it begins with http(s)://
-          if (!/^https?:\/\//i.test(src)) {
-            // Otherwise encode and route through artefact endpoint
-            src = '/artefact?path=' + encodeURIComponent(src);
-          }
-          iframe.src = src;
-          iframe.style.width = '100%';
-          iframe.style.height = '500px';
-          artefactsEl.appendChild(iframe);
-        }
-        // If artefacts listed as array `artefacts` with URLs/paths, show images/links.
-        // Non-HTTP paths will be proxied through /artefact?path=...
-        if (report && report.artefacts && Array.isArray(report.artefacts)){
-          report.artefacts.forEach(a=>{
-            const aEl = document.createElement('div');
-            // Normalize path: if it's not an http(s) URL, proxy via /artefact
-            let href = a;
-            if (!/^https?:\/\//i.test(href)) {
-              href = '/artefact?path=' + encodeURIComponent(href);
+    const url = '/report/'+jobId;
+    let finished = false;
+    while(!finished){
+        try {
+            const r = await fetch(url);
+            if (!r.ok){ setStatus('❌ Job sorgu hatası: '+r.status, 'error'); return; }
+            const j = await r.json();
+            if (j.status === 'pending' || j.status === 'running'){
+                setStatus('⏳ İşleniyor: '+j.status, 'info', true);
+                await new Promise(res=>setTimeout(res, 1000));
+                continue;
             }
-            if (/\.(png|jpg|jpeg|svg)$/i.test(a)){
-              const img = document.createElement('img');
-              img.src = href;
-              aEl.appendChild(img);
-            } else {
-              const link = document.createElement('a');
-              link.href = href;
-              link.textContent = a;
-              link.target = '_blank';
-              aEl.appendChild(link);
+            if (j.status === 'completed'){
+                setStatus('✅ Analiz tamamlandı!', 'success', false);
+                const report = j.report || {};
+                showResult(JSON.stringify(report, null, 2));
+                
+                if (report && report.html_report){
+                    const iframe = document.createElement('iframe');
+                    let src = report.html_report;
+                    if (!/^https?:\/\//i.test(src)) {
+                        src = '/artefact?path=' + encodeURIComponent(src);
+                    }
+                    iframe.src = src;
+                    iframe.style.width = '100%';
+                    iframe.style.height = '500px';
+                    artefactsEl.appendChild(iframe);
+                }
+                
+                if (report && report.artefacts && Array.isArray(report.artefacts)){
+                    report.artefacts.forEach(a=>{
+                        const aEl = document.createElement('div');
+                        let href = a;
+                        if (!/^https?:\/\//i.test(href)) {
+                            href = '/artefact?path=' + encodeURIComponent(href);
+                        }
+                        if (/\.(png|jpg|jpeg|svg)$/i.test(a)){
+                            const img = document.createElement('img');
+                            img.src = href;
+                            aEl.appendChild(img);
+                        } else {
+                            const link = document.createElement('a');
+                            link.href = href;
+                            link.innerHTML = '📎 ' + a;
+                            link.target = '_blank';
+                            aEl.appendChild(link);
+                        }
+                        artefactsEl.appendChild(aEl);
+                    });
+                }
+                finished = true;
+                return;
             }
-            artefactsEl.appendChild(aEl);
-          });
+            if (j.status === 'error'){
+                setStatus('❌ Analiz hatası', 'error', false);
+                showResult(JSON.stringify(j.error || 'Bilinmeyen hata', null, 2));
+                return;
+            }
+            setStatus('⚠️ Bilinmeyen durum: '+j.status, 'error', false);
+            return;
+        } catch (e){
+            setStatus('❌ Polling hatası: '+e.message, 'error', false);
+            return;
         }
-        finished = true;
-        return;
-      }
-      if (j.status === 'error'){
-        setStatus('İş hata ile sonuçlandı', false);
-        resultPre.textContent = JSON.stringify(j.error || 'unknown error', null, 2);
-        return;
-      }
-      setStatus('Bilinmeyen durum: '+j.status, false);
-      return;
-    } catch (e){
-      setStatus('Polling hatası: '+e.message, false);
-      return;
     }
-  }
 }
 
-// Small helper: add safe getter without iterating keys during JSON.stringify
 Object.defineProperty(Object.prototype, 'get', {
-  value: function(key){ return this && this[key] !== undefined ? this[key] : null; },
-  enumerable: false,
-  configurable: true,
-  writable: true
+    value: function(key){ return this && this[key] !== undefined ? this[key] : null; },
+    enumerable: false,
+    configurable: true,
+    writable: true
 });
 })();
 </script>

@@ -37,15 +37,181 @@ class PatternAnalyzerTUI(App):
     """
 
     CSS = """
-    #body { height: 1fr; }
-    #left { width: 50%; min-width: 30; }
-    #right { width: 50%; padding: 1 1; }
-    #tests_scroll { height: 1fr; border: round $accent; padding: 1; }
-    #controls { padding-top: 1; }
-    #loading { padding-left: 1; }
-    #scorecard { border: round $accent; padding: 1; height: auto; max-height: 10; overflow: auto; }
-    #results_table { height: 1fr; border: round $accent; padding: 1; }
-    #results_scroll { height: 10; border: round $accent; padding: 1; }
+    /* Modern Dark Theme for Pattern Analyzer TUI */
+    Screen {
+        background: #0f0f23;
+    }
+    
+    Header {
+        background: #1a1a2e;
+        color: #667eea;
+        text-style: bold;
+    }
+    
+    Footer {
+        background: #1a1a2e;
+        color: #667eea;
+    }
+    
+    #body { 
+        height: 1fr; 
+        background: #0f0f23;
+    }
+    
+    #left { 
+        width: 45%; 
+        min-width: 30; 
+        background: #16213e;
+        border: solid #667eea;
+        border-title-color: #667eea;
+        padding: 1;
+        margin: 1;
+    }
+    
+    #right { 
+        width: 55%; 
+        padding: 1; 
+        margin: 1;
+        background: #16213e;
+        border: solid #667eea;
+    }
+    
+    #file_label, #tests_label, #score_label, #results_label, #results_list_label {
+        color: #667eea;
+        text-style: bold;
+        padding: 0 0 1 0;
+    }
+    
+    #tests_scroll { 
+        height: 1fr; 
+        border: round #764ba2; 
+        padding: 1;
+        background: #1a1a2e;
+    }
+    
+    #controls { 
+        padding-top: 1; 
+        dock: bottom;
+    }
+    
+    #loading { 
+        padding-left: 1; 
+        color: #38ef7d;
+    }
+    
+    #scorecard { 
+        border: round #38ef7d; 
+        padding: 1; 
+        height: auto; 
+        max-height: 10; 
+        overflow: auto;
+        background: #1a1a2e;
+        color: #e6eef6;
+    }
+    
+    #results_table { 
+        height: 1fr; 
+        border: round #764ba2; 
+        padding: 1;
+        background: #0b1220;
+    }
+    
+    #results_scroll { 
+        height: 10; 
+        border: round #764ba2; 
+        padding: 1;
+        background: #1a1a2e;
+    }
+    
+    #status {
+        color: #38ef7d;
+        padding: 1 0;
+    }
+    
+    Button {
+        background: #667eea;
+        color: white;
+        border: none;
+        margin: 0 1;
+    }
+    
+    Button:hover {
+        background: #764ba2;
+    }
+    
+    Button#start_btn {
+        background: #11998e;
+    }
+    
+    Button#start_btn:hover {
+        background: #38ef7d;
+        color: #0f0f23;
+    }
+    
+    Button#exit_btn {
+        background: #ee0979;
+    }
+    
+    Button#exit_btn:hover {
+        background: #ff6a00;
+    }
+    
+    Checkbox {
+        background: transparent;
+        padding: 0 1;
+    }
+    
+    Checkbox:focus {
+        background: #667eea 20%;
+    }
+    
+    Checkbox.-on {
+        color: #38ef7d;
+    }
+    
+    DirectoryTree {
+        background: #0b1220;
+        padding: 1;
+    }
+    
+    DirectoryTree:focus {
+        border: solid #667eea;
+    }
+    
+    DataTable {
+        background: #0b1220;
+    }
+    
+    DataTable > .datatable--header {
+        background: #667eea;
+        color: white;
+        text-style: bold;
+    }
+    
+    DataTable > .datatable--cursor {
+        background: #764ba2;
+    }
+    
+    /* Modal styling */
+    #modal_title {
+        background: #667eea;
+        color: white;
+        text-style: bold;
+        padding: 1;
+        text-align: center;
+    }
+    
+    #modal_metrics {
+        background: #0b1220;
+        color: #e6eef6;
+        padding: 1;
+        border: solid #764ba2;
+    }
+    
+    #modal_close {
+        background: #667eea;
+        margin: 1;
+    }
     """
 
     def compose(self) -> ComposeResult:
@@ -55,24 +221,24 @@ class PatternAnalyzerTUI(App):
             with Horizontal():
                 # Left: file tree / selector
                 yield Vertical(
-                    Static("File Selection", id="file_label"),
+                    Static("📁 File Selection", id="file_label"),
                     DirectoryTree(".", id="file_tree"),
                     id="left",
                 )
                 # Right: test list, results, and control buttons
                 yield Vertical(
-                    Static("Available Tests (Select with Checkboxes)", id="tests_label"),
+                    Static("🧪 Available Tests", id="tests_label"),
                     ScrollView(id="tests_scroll"),
-                    Static("Scorecard", id="score_label"),
+                    Static("📊 Scorecard", id="score_label"),
                     Static("", id="scorecard", expand=False),
-                    Static("Results (Table)", id="results_label"),
+                    Static("📋 Results", id="results_label"),
                     DataTable(id="results_table"),
-                    Static("Clickable Results List", id="results_list_label"),
+                    Static("🔍 Details", id="results_list_label"),
                     ScrollView(id="results_scroll"),
                     Static("", id="status", expand=False),  # For status messages
                     Horizontal(
-                        Button("Start", id="start_btn", variant="success"),
-                        Button("Exit", id="exit_btn", variant="error"),
+                        Button("🚀 Start Analysis", id="start_btn", variant="success"),
+                        Button("🚪 Exit", id="exit_btn", variant="error"),
                         id="controls",
                     ),
                     id="right",
