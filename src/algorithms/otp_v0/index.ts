@@ -49,8 +49,9 @@ function xorDecrypt(encrypted: string, key: string, offset: number): string {
         
         return String.fromCharCode(...result);
     } catch {
-        // If decryption fails, return the original encrypted text
-        return encrypted;
+        // If decryption fails, return an empty string to avoid leaking encryption format info
+        console.warn('Decryption failed in OTP v0');
+        return '';
     }
 }
 

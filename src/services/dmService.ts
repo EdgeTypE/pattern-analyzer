@@ -109,13 +109,14 @@ class DMService {
      * Encrypt a message for sending
      * @param conversationId Unique identifier for the conversation
      * @param plaintext Message to encrypt
-     * @returns Encrypted message content
+     * @returns Encrypted message content (or plaintext if no encryption configured)
      */
     encryptMessage(conversationId: string, plaintext: string): string {
         const config = dmOtpStore.getConfig(conversationId);
         
         if (!config || !config.rawKey) {
-            // No encryption configured, return plaintext
+            // No encryption configured - log warning and return plaintext
+            console.warn(`No encryption configured for conversation ${conversationId}. Message will be sent unencrypted.`);
             return plaintext;
         }
 
@@ -137,13 +138,14 @@ class DMService {
      * @param conversationId Unique identifier for the conversation
      * @param encrypted Encrypted message content
      * @param messageLength Original message length (for offset calculation)
-     * @returns Decrypted plaintext
+     * @returns Decrypted plaintext (or original text if no encryption configured)
      */
     decryptMessage(conversationId: string, encrypted: string, messageLength: number): string {
         const config = dmOtpStore.getConfig(conversationId);
         
         if (!config || !config.rawKey) {
-            // No encryption configured, return as-is
+            // No encryption configured - message may be unencrypted plaintext
+            console.warn(`No encryption configured for conversation ${conversationId}. Returning message as-is.`);
             return encrypted;
         }
 

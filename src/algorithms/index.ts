@@ -18,7 +18,11 @@ export function getAlgorithm(version: OTPVersion): OTPAlgorithm {
     const algorithm = algorithms.get(version);
     if (!algorithm) {
         console.warn(`Unknown OTP version: ${version}, falling back to ${DEFAULT_OTP_VERSION}`);
-        return algorithms.get(DEFAULT_OTP_VERSION)!;
+        const defaultAlgorithm = algorithms.get(DEFAULT_OTP_VERSION);
+        if (!defaultAlgorithm) {
+            throw new Error(`Default OTP algorithm (${DEFAULT_OTP_VERSION}) is not registered`);
+        }
+        return defaultAlgorithm;
     }
     return algorithm;
 }
