@@ -10,6 +10,7 @@ import {
 } from '../algorithms';
 import { dmOtpStore, DMOTPConfig } from '../stores/dmOtpStore';
 import { shouldShowSystemMessage, generateLargeKeySystemMessage, SYSTEM_MESSAGE_KEY_THRESHOLD } from '../algorithms/otp_v1';
+import { t } from '../i18n';
 
 /**
  * Message structure for DM
@@ -63,7 +64,7 @@ class DMService {
             return {
                 id: `system-${Date.now()}`,
                 senderId: 'system',
-                content: generateLargeKeySystemMessage(rawKey.length),
+                content: generateLargeKeySystemMessage(rawKey.length, t().largeKeySystemMessage),
                 timestamp: Date.now(),
                 isSystemMessage: true,
             };
@@ -95,7 +96,7 @@ class DMService {
             return {
                 id: `system-${Date.now()}`,
                 senderId: 'system',
-                content: generateLargeKeySystemMessage(rawKey.length),
+                content: generateLargeKeySystemMessage(rawKey.length, t().largeKeySystemMessage),
                 timestamp: Date.now(),
                 isSystemMessage: true,
             };
@@ -196,11 +197,11 @@ class DMService {
         const config = dmOtpStore.getConfig(conversationId);
         
         if (!config || !config.rawKey) {
-            return 'Şifreleme devre dışı';
+            return t().encryptionDisabled;
         }
 
         const algorithm = getAlgorithm(config.otpVersion);
-        return `${algorithm.name} ile şifreli`;
+        return t().encryptedWith(algorithm.name);
     }
 
     /**
@@ -237,7 +238,5 @@ class DMService {
     }
 }
 
-// Export singleton instance
+// Export singleton instance (using only named export for consistency)
 export const dmService = new DMService();
-
-export default dmService;

@@ -175,7 +175,5 @@ class DMHistoryService {
     }
 }
 
-// Export singleton instance
+// Export singleton instance (using only named export for consistency)
 export const dmHistoryService = new DMHistoryService();
-
-export default dmHistoryService;

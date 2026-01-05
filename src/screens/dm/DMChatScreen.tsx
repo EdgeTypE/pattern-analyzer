@@ -10,6 +10,7 @@ import {
     getAvailableVersions 
 } from '../../algorithms';
 import { dmService, DMMessage } from '../../services/dmService';
+import { t, stripSystemTags } from '../../i18n';
 
 /**
  * Props for DMChatScreen component
@@ -61,16 +62,18 @@ const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
 
     if (!isOpen) return null;
 
+    const translations = t();
+
     return (
         <div className="advanced-settings-modal">
             <div className="modal-overlay" onClick={onClose} />
             <div className="modal-content">
-                <h2>Gelişmiş Ayarlar</h2>
+                <h2>{translations.advancedSettings}</h2>
                 
                 <div className="settings-section">
-                    <h3>Şifreleme Türü</h3>
+                    <h3>{translations.encryptionType}</h3>
                     <p className="section-description">
-                        Mesajlarınız için kullanılacak OTP şifreleme sürümünü seçin.
+                        {translations.encryptionTypeDescription}
                     </p>
                     
                     <div className="version-selector">
@@ -89,7 +92,7 @@ const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                                     />
                                     <span className="version-label">{OTP_VERSION_LABELS[version]}</span>
                                     {version === DEFAULT_OTP_VERSION && (
-                                        <span className="default-badge">Varsayılan</span>
+                                        <span className="default-badge">{translations.defaultBadge}</span>
                                     )}
                                 </div>
                                 <p className="version-description">{OTP_VERSION_DESCRIPTIONS[version]}</p>
@@ -99,11 +102,9 @@ const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                 </div>
 
                 <div className="settings-section">
-                    <h3>Şifreleme Anahtarı</h3>
+                    <h3>{translations.encryptionKey}</h3>
                     <p className="section-description">
-                        Mesajları şifrelemek için kullanılacak anahtar. 
-                        {dmService.getKeyThreshold()} karakterden uzun anahtarlar için 
-                        sistem bildirimi gösterilir.
+                        {translations.encryptionKeyDescription(dmService.getKeyThreshold())}
                     </p>
                     
                     <div className="key-input-container">
@@ -111,13 +112,13 @@ const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                             className="key-input"
                             value={encryptionKey}
                             onChange={(e) => setEncryptionKey(e.target.value)}
-                            placeholder="Şifreleme anahtarını girin..."
+                            placeholder={translations.keyPlaceholder}
                             rows={3}
                         />
                         <div className="key-info">
-                            <span>Anahtar uzunluğu: {encryptionKey.length} karakter</span>
+                            <span>{translations.keyLength(encryptionKey.length)}</span>
                             {dmService.isLargeKey(encryptionKey.length) && (
-                                <span className="large-key-badge">Büyük Anahtar</span>
+                                <span className="large-key-badge">{translations.largeKeyBadge}</span>
                             )}
                         </div>
                     </div>
@@ -125,10 +126,10 @@ const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
 
                 <div className="modal-actions">
                     <button className="cancel-button" onClick={onClose}>
-                        İptal
+                        {translations.cancel}
                     </button>
                     <button className="save-button" onClick={handleSave}>
-                        Kaydet
+                        {translations.save}
                     </button>
                 </div>
             </div>
@@ -360,12 +361,14 @@ const DMChatScreen: React.FC<DMChatScreenProps> = ({
         }
     }, [conversationId]);
 
+    const translations = t();
+
     return (
         <div className="dm-chat-screen">
             <header className="chat-header">
                 {onBack && (
                     <button className="back-button" onClick={onBack}>
-                        ← Geri
+                        ← {translations.back}
                     </button>
                 )}
                 <div className="header-info">
@@ -376,7 +379,7 @@ const DMChatScreen: React.FC<DMChatScreenProps> = ({
                     className="settings-button"
                     onClick={() => setShowAdvancedSettings(true)}
                 >
-                    ⚙️ Gelişmiş Ayarlar
+                    ⚙️ {translations.advancedSettings}
                 </button>
             </header>
 
@@ -388,7 +391,7 @@ const DMChatScreen: React.FC<DMChatScreenProps> = ({
                     >
                         {message.isSystemMessage ? (
                             <div className="system-message">
-                                {message.content.replace(/<\/?system>/g, '')}
+                                {stripSystemTags(message.content)}
                             </div>
                         ) : (
                             <div className="message-content">{message.content}</div>
@@ -406,11 +409,11 @@ const DMChatScreen: React.FC<DMChatScreenProps> = ({
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Mesaj yazın..."
+                    placeholder={translations.messagePlaceholder}
                     className="message-input"
                 />
                 <button onClick={handleSendMessage} className="send-button">
-                    Gönder
+                    {translations.send}
                 </button>
             </div>
 

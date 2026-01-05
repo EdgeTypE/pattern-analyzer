@@ -10,5 +10,8 @@ export * from './stores';
 // Services
 export * from './services';
 
+// i18n
+export * from './i18n';
+
 // Screens
 export { DMChatScreen } from './screens/dm';

@@ -178,7 +178,5 @@ class DMOTPStore {
     }
 }
 
-// Export singleton instance
+// Export singleton instance (using only named export for consistency)
 export const dmOtpStore = new DMOTPStore();
-
-export default dmOtpStore;

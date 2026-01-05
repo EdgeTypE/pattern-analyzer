@@ -115,8 +115,17 @@ export function shouldShowSystemMessage(keyLength: number): boolean {
 
 /**
  * Generate system message for large keys
+ * @param keyLength Length of the encryption key
+ * @param messageGenerator Optional custom message generator function
  */
-export function generateLargeKeySystemMessage(keyLength: number): string {
+export function generateLargeKeySystemMessage(
+    keyLength: number, 
+    messageGenerator?: (keyLength: number) => string
+): string {
+    if (messageGenerator) {
+        return messageGenerator(keyLength);
+    }
+    // Default message (Turkish) - use i18n in calling code for proper localization
     return `<system>Şifreleme anahtarı ${keyLength} karakter uzunluğunda. Bu uzun bir anahtar olduğundan, güvenlik artırılmış durumda.</system>`;
 }
 

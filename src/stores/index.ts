@@ -1,4 +1,4 @@
 // Stores Index
 // Export all stores
 
-export { default as dmOtpStore, DMOTPConfig } from './dmOtpStore';
+export { dmOtpStore, DMOTPConfig } from './dmOtpStore';
